@@ -2,11 +2,11 @@ List of templates
 -----------------
 
 <table>
-<th>
-<td>Template</td><td>Who</td> <td>External contact</td> <td>Microsoft Contact</td> <td>When</td> <td>Notes</td>
-</th>
 <tr>
-<td>Elasticsearch</td><td>Trent</td> <td></td> <td></td> <td>4/3</td> <td>I will continue to own this one and will be mostly complete this wee</td>
+<th>Template</th><th>Who</th> <th>External contact</th> <th>Microsoft Contact</th> <th>When</th> <th>Notes</th>
+</tr>
+<tr>
+<td>Elasticsearch</td><td>Trent</td> <td></td> <td></td> <td>4/3</td> <td>I will continue to own this one and will be mostly complete this week</td>
 </tr>
 <tr>
 <td>Redis</td><td>Val</td> <td></td> <td></td> <td></td> <td></td>
