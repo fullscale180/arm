@@ -15,9 +15,6 @@ List of templates
 <td>Postgress</td><td></td> <td></td> <td></td> <td></td> <td>(HA - Primary Secondary)</td>
 </tr>
 <tr>
-<td>Postgress</td><td></td> <td></td> <td></td> <td></td> <td></td>
-</tr>
-<tr>
 <td>Nagios</td><td></td> <td></td> <td></td> <td></td> <td></td>
 </tr>
 <tr>
