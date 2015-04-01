@@ -51,9 +51,11 @@
             "type": "string",
             "defaultValue": "10.0.1.0/24"
         },
+       "redisVersion": {
+            "type": "string"
+       },
         "redisClusterName": {
-            "type": "string",
-            "defaultValue": ""
+            "type": "string"
         }
     },
     "variables": {
@@ -212,7 +214,7 @@
                     "fileUris": [
                         "https://fs180.blob.core.windows.net/public/redis-cluster-install.sh"
                     ],
-                    "commandToExecute": "[concat('bash redis-cluster-install.sh -n ', parameters('redisClusterName'))]"
+                    "commandToExecute": "[concat('bash redis-cluster-install.sh -n ', parameters('redisClusterName'), ' -v ', parameters('redisVersion'))]"
                 }
             }
         }
