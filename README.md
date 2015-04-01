@@ -12,10 +12,10 @@ List of templates
 <td>Redis</td><td>Val</td> <td></td> <td></td> <td></td> <td></td>
 </tr>
 <tr>
-<td>Postgress</td><td></td> <td></td> <td></td> <td></td> <td>(HA - Primary Secondary)</td>
+<td>Postgress</td><td>Val</td> <td></td> <td></td> <td></td> <td>(HA - Primary Secondary)</td>
 </tr>
 <tr>
-<td>Nagios</td><td></td> <td></td> <td></td> <td></td> <td></td>
+<td>Nagios</td><td>Val</td> <td></td> <td></td> <td></td> <td></td>
 </tr>
 <tr>
 <td>Jenkins</td><td>Trent</td> <td></td> <td></td> <td>4/3</td> <td>(Master/Slave) - I will be helping with this one and should have something roughed out this week.</td>
@@ -27,7 +27,7 @@ List of templates
 <td>CouchBase</td><td>Ercenk</td> <td>Cihan</td> <td></td> <td></td> <td></td>
 </tr> 
 <tr>
-<td>Cassandra</td><td></td> <td></td> <td></td> <td></td> <td></td>
+<td>Cassandra</td><td>Trent</td> <td></td> <td></td> <td></td> <td></td>
 </tr> 
  
 </table>
