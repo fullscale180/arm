@@ -1,37 +1,66 @@
 #!/bin/bash
 
-#########################################
-# This script will install redis,
-# and download a pre-configured config
-#########################################
+########################################################
+# This script will install Redis from sources
+########################################################
 
-# Redis Defaults
-REDIS_URL="http://redis.googlecode.com/files/redis-2.6.14.tar.gz"
-REDIS_TGZ="redis-2.6.14.tar.gz"
-REDIS_DIR="redis-2.6.14"
+if [ "$(whoami)" != "root" ]; then
+	echo "ERROR : You must be root to run this program"
+	exit 1
+fi
 
-# Download and unpack Nginx
-wget -q $REDIS_URL
-tar zxf $REDIS_TGZ
+# Parse script parameters
+while getopts :n:v:p:h FLAGS; do
+  case $FLAGS in
+    n)  # Cluster name
+      CLUSTER_NAME=${OPTARG}
+      ;;
+    v)  # Version to be installed
+      VERSION=${OPTARG}
+      ;;
+    p)  # Persistence option
+      ENABLE_PERSISTENCE=true
+      ;;
+    h)  # Helpful hints
+      help
+      exit 2
+      ;;
+    \?) #unrecognized option - show help
+      echo -e \\n"Option -${BOLD}$OPTARG${NORM} not allowed."
+      help
+      exit 2
+      ;;
+  esac
+done
 
-# Move into the directory and build
-cd $REDIS_DIR
+help()
+{
+	echo "HELP!"
+}
+
+echo 'Installing redis v.'$VERSION' ... '
+
+# installing build essentials if it is missing
+apt-get install build-essential
+
+wget http://download.redis.io/releases/redis-$VERSION.tar.gz
+tar xzf redis-$VERSION.tar.gz
+cd redis-$VERSION
 make
+make install prefix=/usr/local/bin/
+cp redis.conf /etc/redis.conf
+cd ..
+rm redis-$VERSION -R
+rm redis-$VERSION.tar.gz
 
-# Copy the executables to the /opt/redis directory
-cp src/redis-benchmark /usr/local/bin
-cp src/redis-cli /usr/local/bin
-cp src/redis-server /usr/local/bin
-cp src/redis-check-aof /usr/local/bin
-cp src/redis-check-dump /usr/local/bin
+# create service user and configure autostart
+useradd -r -s /bin/false redis
+wget -O /etc/init.d/redis-server https://gist.github.com/iJackUA/5336459/raw/4d7e4adfc08899dc7b6fd5d718f885e3863e6652/redis-server-for-init.d-startup
+touch /var/run/redis.pid
+chown redis:redis /var/run/redis.pid
+chmod 755 /etc/init.d/redis-server
 
-# Download the pre-defined config
-curl -sL http://git.io/pu0alA > /etc/default/redis
+# perform autostart
+update-rc.d redis-server defaults
 
-# Download the init script, and make executable
-curl -sL http://git.io/w4GcUg > /etc/init.d/redis
-chmod +x /etc/init.d/redis
-
-# Start redis
-/etc/init.d/redis start
 
