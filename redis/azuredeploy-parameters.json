@@ -1,0 +1,44 @@
+{
+    "storageAccountName" : {
+        "value":"armdeploy"
+    },
+    "adminUsername": {
+        "value": "RedisAdmin"
+    },
+    "adminPassword": {
+        "value": "J5zA3Fgxh8CrR9CcUHjNvGJ8A6xPPrxu"
+    },
+    "numberOfInstances": {
+        "value": 2
+    },
+    "subscriptionId": {
+        "value": "b4249f2a-2378-4c3e-8e5a-214140d7f1c0"
+    },
+    "region": {
+        "value": "West US"
+    },
+    "virtualNetworkName": {
+        "value": "RedisClustVnet"
+    },
+    "vmSize": {
+        "value": "Standard_A0"
+    },
+    "subnet1Name": {
+        "value": "Subnet-1"
+    },
+    "subnet2Name": {
+        "value": "Subnet-2"
+    },
+    "addressPrefix": {
+        "value": "10.0.0.0/16"
+    },
+    "subnet1Prefix": {
+        "value": "10.0.0.0/24"
+    },
+    "subnet2Prefix": {
+        "value": "10.0.1.0/24"
+    },
+    "redisClusterName": {
+        "value": "redis-arm-cluster"
+    }
+}
