@@ -1,0 +1,44 @@
+{
+    "storageAccountName" : {
+        "value":"trenttest2"
+    },
+    "adminUsername": {
+        "value": "trent"
+    },
+    "adminPassword": {
+        "value": "Blue!2010"
+    },
+    "numberOfInstances": {
+        "value": 2
+    },
+    "subscriptionId": {
+        "value": "ed8df19a-cf20-4645-80b2-663a99dd9051"
+    },
+    "region": {
+        "value": "West US"
+    },
+    "virtualNetworkName": {
+        "value": "myVNET2"
+    },
+    "vmSize": {
+        "value": "Standard_A0"
+    },
+    "subnet1Name": {
+        "value": "Subnet-1"
+    },
+    "subnet2Name": {
+        "value": "Subnet-2"
+    },
+    "addressPrefix": {
+        "value": "10.0.0.0/16"
+    },
+    "subnet1Prefix": {
+        "value": "10.0.0.0/24"
+    },
+    "subnet2Prefix": {
+        "value": "10.0.1.0/24"
+    },
+    "esClusterName": {
+        "value": "elasticsearch-fullscale"
+    }
+}
