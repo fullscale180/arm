@@ -6,7 +6,7 @@ List of templates
 <th>Template</th><th>Who</th> <th>External contact</th> <th>Microsoft Contact</th> <th>When</th> <th>Notes</th>
 </tr>
 <tr>
-<td>Elasticsearch</td><td>Trent</td> <td></td> <td></td> <td>4/6</td> <td>I will continue to own this one and will be mostly complete this week</td>
+<td>Elasticsearch</td><td>Trent</td> <td></td> <td></td> <td>4/6</td> <td>step one is a cluster with master-data nodes</td>
 </tr>
 <tr>
 <td>Redis</td><td>Val</td> <td></td> <td></td> <td></td> <td></td>
