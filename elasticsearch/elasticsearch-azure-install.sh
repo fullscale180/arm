@@ -27,7 +27,7 @@ while getopts :n:m:l:x:s:h FLAGS; do
     x)  #master node
       MASTER_ONLY_NODE=true
       ;;
-    x)  #client node
+    y)  #client node
       CLIENT_ONLY_NODE=true
       ;;
     s) #striped disk volumes
