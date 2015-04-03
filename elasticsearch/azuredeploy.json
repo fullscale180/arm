@@ -37,11 +37,11 @@
         },
         "subnet1Name": {
             "type": "string",
-            "defaultValue": "Subnet-1"
+            "defaultValue": "Application"
         },
         "subnet2Name": {
             "type": "string",
-            "defaultValue": "Subnet-2"
+            "defaultValue": "Data"
         },
         "subnet1Prefix": {
             "type": "string",
@@ -72,6 +72,22 @@
             "properties": {
                 "accountType": "Standard_LRS"
             }
+        },
+        {
+          "apiVersion": "2014-12-01-preview",
+          "type": "Microsoft.Compute/availabilitySets",
+          "name": "elasticsearchData",
+          "location": "[parameters('region')]",
+          "properties": {
+          }
+        },
+        {
+          "apiVersion": "2014-12-01-preview",
+          "type": "Microsoft.Compute/availabilitySets",
+          "name": "elasticsearchMaster",
+          "location": "[parameters('region')]",
+          "properties": {
+          }
         },
         {
             "apiVersion": "2014-12-01-preview",
@@ -154,9 +170,14 @@
             },
             "dependsOn": [
                 "[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]",
-                "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]",
+                "[concat('Microsoft.Compute/availabilitySets/', 'elasticsearchData')]",
+                "[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]"
             ],
             "properties": {
+                "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', 'elasticsearchData')]"
+                },
                 "hardwareProfile": {
                     "vmSize": "[parameters('vmSize')]"
                 },
@@ -172,10 +193,17 @@
                 "dataDisks" : [
                     {
                         "name" : "datadisk1",
-                        "diskSizeGB" : "100",
+                        "diskSizeGB" : "200",
                         "lun" : 0,
                         "vhd":{
-                            "Uri" : "[concat('http://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/','myvm','dataDisk', copyindex() ,'.vhd')]"
+                            "Uri" : "[concat('http://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/','myvm', copyindex(),'dataDisk1' ,'.vhd')]"
+                        }
+                    },{
+                        "name" : "datadisk2",
+                        "diskSizeGB" : "200",
+                        "lun" : 1,
+                        "vhd":{
+                            "Uri" : "[concat('http://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/','myvm', copyindex() ,'dataDisk2','.vhd')]"
                         }
                     }
                 ],    
@@ -202,7 +230,9 @@
             },
             "dependsOn": [
                 "[concat('Microsoft.Compute/virtualMachines/', 'myvm', copyindex())]",
-                "[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]"
+                "[concat('Microsoft.Network/networkInterfaces/', 'masterNodeNic0')]",
+                "[concat('Microsoft.Network/networkInterfaces/', 'masterNodeNic1')]",
+                "[concat('Microsoft.Network/networkInterfaces/', 'masterNodeNic2')]"
             ],
             "properties": {
                 "publisher": "Microsoft.OSTCExtensions",
@@ -212,7 +242,99 @@
                     "fileUris": [
                         "https://fs180.blob.core.windows.net/public/elasticsearch-azure-install.sh"
                     ],
-                    "commandToExecute": "[concat('bash elasticsearch-azure-install.sh -n ', parameters('esClusterName'))]"
+                    "commandToExecute": "[concat('bash elasticsearch-azure-install.sh -n ', parameters('esClusterName'), ' -d ', reference('masterNodeNic0').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic1').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic2').ipConfigurations[0].properties.privateIPAddress)]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2014-12-01-preview",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat('masterNodeNic', copyindex())]",
+            "location": "[parameters('region')]",
+            "copy": {
+                "name": "masterNodesNicLoop",
+                "count": 3
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('subnet1Ref')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2014-12-01-preview",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[concat('masterVm', copyindex())]",
+            "location": "[parameters('region')]",
+            "copy": {
+                "name": "masterVmLoop",
+                "count": 3
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', 'masterNodeNic', copyindex())]",
+                "[concat('Microsoft.Compute/availabilitySets/', 'elasticsearchMaster')]",
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+            ],
+            "properties": {
+                "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', 'elasticsearchMaster')]"
+                },
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "osProfile": {
+                    "computername": "[concat('masterVm', copyIndex())]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "storageProfile": {
+                "sourceImage": {
+                    "id": "[variables('sourceImageName')]"
+                },
+                "destinationVhdsContainer" : "[concat('http://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
+            },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces',concat('masterNodeNic', copyindex()))]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat('masterVm', copyindex(), '/installelasticsearch')]",
+            "apiVersion": "2014-12-01-preview",
+            "location": "[parameters('region')]",
+            "copy": {
+                "name": "masterVMExtensionsLoop",
+                "count": 3
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', 'masterVm', copyindex())]",
+                "[concat('Microsoft.Network/networkInterfaces/', 'masterNodeNic', copyindex())]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.OSTCExtensions",
+                "type": "CustomScriptForLinux",
+                "typeHandlerVersion": "1.2",
+                "settings": {
+                    "fileUris": [
+                        "https://fs180.blob.core.windows.net/public/elasticsearch-azure-install.sh"
+                    ],
+                    "commandToExecute": "[concat('bash elasticsearch-azure-install.sh -xn ', parameters('esClusterName'), ' -d ', reference('masterNodeNic0').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic1').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic2').ipConfigurations[0].properties.privateIPAddress)]"
                 }
             }
         }
