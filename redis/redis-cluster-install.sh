@@ -3,14 +3,28 @@
 ########################################################
 # This script will install Redis from sources
 ########################################################
+help()
+{
+	echo "HELP!"
+}
+
+log()
+{
+    curl -X POST -H "content-type:text/plain" --data-binary "$(date) | $1" https://logs-01.loggly.com/inputs/681451c7-fb5e-409b-a263-b06b29c9560f/tag/redis-extension,${HOSTNAME}
+}
+
+log "Begin execution of Redis installation script extension"
 
 if [ "$(whoami)" != "root" ]; then
+	log "ERROR: User is not authorized"
 	echo "ERROR : You must be root to run this program"
 	exit 1
 fi
 
 # Parse script parameters
 while getopts :n:v:p:h FLAGS; do
+  log "Flag ${FLAGS} passed with ${OPTARG}"
+  
   case $FLAGS in
     n)  # Cluster name
       CLUSTER_NAME=${OPTARG}
@@ -33,12 +47,7 @@ while getopts :n:v:p:h FLAGS; do
   esac
 done
 
-help()
-{
-	echo "HELP!"
-}
-
-echo 'Installing redis v.'$VERSION' ... '
+log "Installing Redis v${VERSION}... "
 
 # installing build essentials if it is missing
 apt-get install build-essential
@@ -53,14 +62,18 @@ cd ..
 rm redis-$VERSION -R
 rm redis-$VERSION.tar.gz
 
+log "Redis package was downloaded and built successfully"
+
 # create service user and configure autostart
 useradd -r -s /bin/false redis
-wget -O /etc/init.d/redis-server https://gist.github.com/iJackUA/5336459/raw/4d7e4adfc08899dc7b6fd5d718f885e3863e6652/redis-server-for-init.d-startup
+wget -O /etc/init.d/redis-server https://fs180.blob.core.windows.net/public/redis-server-startup.sh
 touch /var/run/redis.pid
 chown redis:redis /var/run/redis.pid
 chmod 755 /etc/init.d/redis-server
 
+log "Redis service was created successfully"
+
 # perform autostart
 update-rc.d redis-server defaults
 
-
+log "Redis service was configured for auto-start"
