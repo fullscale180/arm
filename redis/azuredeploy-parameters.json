@@ -1,6 +1,6 @@
 {
-    "storageAccountName" : {
-        "value":"armdeploy"
+    "storageAccountName": {
+        "value": "armdeploy"
     },
     "adminUsername": {
         "value": "RedisAdmin"
@@ -37,6 +37,9 @@
     },
     "subnet2Prefix": {
         "value": "10.0.1.0/24"
+    },
+    "redisVersion": {
+        "value": "3.0.0"
     },
     "redisClusterName": {
         "value": "redis-arm-cluster"

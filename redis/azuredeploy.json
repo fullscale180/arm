@@ -51,9 +51,11 @@
             "type": "string",
             "defaultValue": "10.0.1.0/24"
         },
+       "redisVersion": {
+            "type": "string"
+       },
         "redisClusterName": {
-            "type": "string",
-            "defaultValue": ""
+            "type": "string"
         }
     },
     "variables": {
@@ -61,7 +63,8 @@
         "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
         "subnet1Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet1Name'))]",
-        "sourceImageName": "[concat('/',parameters('subscriptionId'),'/services/images/',variables('vmSourceImageName'))]"
+        "sourceImageName": "[concat('/',parameters('subscriptionId'),'/services/images/',variables('vmSourceImageName'))]",
+        "computerNamePrefix":  "redisnode"
     },
     "resources": [
         {
@@ -158,12 +161,16 @@
             ],
             "properties": {
                 "hardwareProfile": {
-                    "vmSize": "[parameters('vmSize')]"
+                    "vmSize": "[parameters('vmSize')]",
+                    "platformGuestAgent": "true"
                 },
                 "osProfile": {
-                    "computername": "[concat('vm', copyIndex())]",
+                    "computername": "[concat(variables('computerNamePrefix'), copyIndex())]",
                     "adminUsername": "[parameters('adminUsername')]",
-                    "adminPassword": "[parameters('adminPassword')]"
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "linuxOperatingSystemProfile": {
+                        "disableSshPasswordAuthentication": "false"
+                    }
                 },
                 "storageProfile": {
                 "sourceImage": {
@@ -186,6 +193,15 @@
                     "networkInterfaces": [
                         {
                             "id": "[resourceId('Microsoft.Network/networkInterfaces',concat('nic', copyindex()))]"
+                        }
+                    ],
+                    "inputEndpoints": [
+                        {
+                            "enableDirectServerReturn": "False",
+                            "endpointName": "SSH",
+                            "privatePort": 22,
+                            "publicPort": 22,
+                            "protocol": "tcp"
                         }
                     ]
                 }
@@ -212,7 +228,7 @@
                     "fileUris": [
                         "https://fs180.blob.core.windows.net/public/redis-cluster-install.sh"
                     ],
-                    "commandToExecute": "[concat('bash redis-cluster-install.sh -n ', parameters('redisClusterName'))]"
+                    "commandToExecute": "[concat('bash redis-cluster-install.sh -n ', parameters('redisClusterName'), ' -v ', parameters('redisVersion'))]"
                 }
             }
         }

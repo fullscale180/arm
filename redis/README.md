@@ -23,5 +23,7 @@ Below are the parameters that the template expects
 | addressPrefix | The IP address mask used by the Virtual Network |
 | subnet1Prefix | The subnet mask used by primary Virtual Network subnet |
 | subnet2Prefix | The subnet mask used by secondary Virtual Network subnet |
+| redisVersion | Redis version number to be installed |
 | redisClusterName | Name of the Redis cluster |
+
 
