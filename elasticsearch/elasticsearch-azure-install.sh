@@ -1,9 +1,21 @@
 #!/bin/bash
+
+
+log()
+{
+    curl -X POST -H "content-type:text/plain" --data-binary "$(date) | $1" https://logs-01.loggly.com/inputs/d17b3933-b2ed-439c-827c-c7047d992745/tag/es-extension,${HOSTNAME}
+}
+
+log "Begin execution of elasticsearch script extension"
+
 if [ "${UID}" -ne 0 ];
 then
+    log "Script executed without root permissions"
     echo "You must be root to run this program." >&2
     exit 3
 fi
+
+#WARNING - This is currently test and experimental work
 
 #Script Parameters
 # ClusterName
@@ -13,25 +25,35 @@ fi
 # Node Name Prefix
 # Is Durable
 # Install Marvel
-while getopts :n:m:l:x:s:h FLAGS; do
-  case $FLAGS in
+while getopts :n:m:d:lxyzsh optname; do
+    log "Option $optname set with value ${OPTARG}"
+  case $optname in
     n)  #set clsuter name
-        CLUSTER_NAME=${OPTARG}
+      CLUSTER_NAME=${OPTARG}
+      ;;
+    d) #Static dicovery endpoints
+      DISCOVERY_ENDPOINTS=${OPTARG}
       ;;
     m)  #machine name
-      MACHINE_NAME= ${OPTARG}
+      MACHINE_NAME=${OPTARG}
       ;;
     l)  #install marvel
-      INSTALL_MARVEL=true
+      INSTALL_MARVEL=1
       ;;
     x)  #master node
-      MASTER_ONLY_NODE=true
+      MASTER_ONLY_NODE=1
       ;;
     y)  #client node
-      CLIENT_ONLY_NODE=true
+      CLIENT_ONLY_NODE=1
+      ;;
+    z)  #client node
+      CLIENT_DATA_NODE=1
       ;;
     s) #striped disk volumes
-	  OS_STRIPED_DISK=true
+	  OS_STRIPED_DISK=1
+      ;;
+    d) #place data on local resource disk
+      NON_DURABLE=1
       ;;
     h)  #show help
       help
@@ -47,13 +69,11 @@ done
 
 help()
 {
+    #TODO: Add help text here
 	echo "HELP!"
 }
 
 #Validate Configurations
-
-#Prepare Disk Storage
-
 
 #A set of disks to ignore from partitioning and formatting
 BLACKLIST="/dev/sda|/dev/sdb"
@@ -62,7 +82,7 @@ BLACKLIST="/dev/sda|/dev/sdb"
 DATA_BASE="/datadisks"
 
 usage() {
-    echo "Usage: $(basename $0)"
+    echo "Some udate details: $(basename $0)"
 }
 
 is_partitioned() {
@@ -174,7 +194,7 @@ scan_partition_format()
 
 	if [ "${#DISKS}" -eq 0 ];
 	then
-	    echo "No unpartitioned disks without filesystems detected"
+	    log "No unpartitioned disks without filesystems detected"
 	    return
 	fi
 	echo "Disks are ${DISKS[@]}"
@@ -206,13 +226,22 @@ scan_partition_format()
 	done
 }
 
-#Format data disks
-#------------------------
-# Find data disks then partition, format, and mount them as seperate drives
-scan_partition_format
+setup_data_disk()
+{
+    log "Configuring disk $1/elasticsearch/data"
+
+    mkdir -p "$1/elasticsearch/data"
+    chown -R elasticsearch:elasticsearch "$1/elasticsearch"
+    chmod 755 "$1/elasticsearch"
+}
+
+##############
+## MAIN
+##############
 
 #Install Oracle Java
 #------------------------
+log "Installing Java"
 add-apt-repository -y ppa:webupd8team/java
 apt-get -y update 
 echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
@@ -222,6 +251,7 @@ apt-get -y install oracle-java7-installer
 #
 #Install Elasticsearch
 #-----------------------
+log "Installing Elaticsearch"
 # apt-get install approach
 # This has the added benefit that is simplifies upgrades
 wget -qO - https://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add -
@@ -234,25 +264,50 @@ update-rc.d elasticsearch defaults 95 10
 #sudo wget -q https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.deb -O elasticsearch.deb
 #sudo dpkg -i elasticsearch.deb
 
+#Format data disks
+#------------------------
+# Find data disks then partition, format, and mount them as seperate drives
+log "Begin scanning and formatting data disks"
+scan_partition_format
+
+DATAPATH_CONFIG=""
 #
 #Configure permissions on data disks for elasticsearch user:group
 #--------------------------
-mkdir -p /datadisks/disk1/elasticsearch/data /datadisks/disk2/elasticsearch/data
-chown -R elasticsearch:elasticsearch /datadisks/disk1/elasticsearch /datadisks/disk2/elasticsearch
-chmod 755 /datadisks/disk1/elasticsearch /datadisks/disk2/elasticsearch
+for D in `find /datadisks/ -mindepth 1 -maxdepth 1 -type d`
+do
+    setup_data_disk ${D}
+    DATAPATH_CONFIG += "$D/elasticsearch/data,"
+done
+
+#Format the static host endpooints to what elasticsearch configuratino expects
+HOSTS_CONFIG="[\"${DISCOVERY_ENDPOINTS//-/\",\"}\"]"
+
+log "Update configuration with data path list of $DATAPATH_CONFIG"
+log "Update configuration with hosts configuration of $HOSTS_CONFIG"
 
 #Configure Elasticsearch
 #---------------------------
 #Set elasticsearch.yml configuration settings
 sed -i -e "/cluster\.name/s/^#//g;s/^\(cluster\.name\s*:\s*\).*\$/\1${CLUSTER_NAME}/" /etc/elasticsearch/elasticsearch.yml
 sed -i -e "/bootstrap\.mlockall/s/^#//g;s/^\(bootstrap\.mlockall\s*:\s*\).*\$/\1true/" /etc/elasticsearch/elasticsearch.yml
+sed -i -e "/path\.data/s/^#//g;s/^\(path\.data\s*:\s*\).*\$/\1${DATAPATH_CONFIG}/" /etc/elasticsearch/elasticsearch.yml
+
+#Disable multicast and set master node endpoints
+sed -i -e "/discovery\.zen\.ping\.multicast\.enabled/s/^#//g;s/^\(discovery\.zen\.ping\.multicast\.enabled\s*:\s*\).*\$/\1false/" /etc/elasticsearch/elasticsearch.yml
+sed -i -e "/discovery\.zen\.ping\.unicast\.hosts/s/^#//g;s/^\(discovery\.zen\.ping\.unicast\.hosts\s*:\s*\).*\$/\1${DISCOVERY_HOSTS}/" /etc/elasticsearch/elasticsearch.yml
+
+#/etc/default/elasticseach
+#Update HEAP Size in this configuration or in upstart service
+#ES_HEAP_SIZE=`free -m |grep Mem | awk "{if ($2/2 >31744)  print 31744;else print $2/2;}"`
 
 # Configure Environment
+#TODO
 
 #Install Monit
 #TODO
 
-#Install Marvel
+#Optionally Install Marvel
 # bin/plugin -i elasticsearch/marvel/latest
 
 #and... start the service
