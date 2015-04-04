@@ -257,10 +257,9 @@ log "Installing Elaticsearch"
 wget -qO - https://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add -
 add-apt-repository "deb http://packages.elasticsearch.org/elasticsearch/1.5/debian stable main"
 apt-get update && apt-get install elasticsearch
-update-rc.d elasticsearch defaults 95 10
 
 # DPKG Install Approach
-# I like the simplicity in this approach
+# I like the simplicity in this approach and easy to select version
 #sudo wget -q https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.deb -O elasticsearch.deb
 #sudo dpkg -i elasticsearch.deb
 
@@ -270,15 +269,22 @@ update-rc.d elasticsearch defaults 95 10
 log "Begin scanning and formatting data disks"
 scan_partition_format
 
-DATAPATH_CONFIG=""
 #
 #Configure permissions on data disks for elasticsearch user:group
 #--------------------------
+DATAPATH_CONFIG=""
 for D in `find /datadisks/ -mindepth 1 -maxdepth 1 -type d`
 do
     setup_data_disk ${D}
-    DATAPATH_CONFIG += "$D/elasticsearch/data,"
+    DATAPATH_CONFIG+="$D/elasticsearch/data,"
 done
+DATAPATH_CONFIG="${DATAPATH_CONFIG%?}"
+
+#D=`find ~ -mindepth 1 -maxdepth 1 -type d`
+#DISKS=$(echo "$D" | tr '\n' ',')
+
+#My local IP addresses
+MY_IPS=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
 
 #Format the static host endpooints to what elasticsearch configuratino expects
 HOSTS_CONFIG="[\"${DISCOVERY_ENDPOINTS//-/\",\"}\"]"
@@ -289,13 +295,36 @@ log "Update configuration with hosts configuration of $HOSTS_CONFIG"
 #Configure Elasticsearch
 #---------------------------
 #Set elasticsearch.yml configuration settings
-sed -i -e "/cluster\.name/s/^#//g;s/^\(cluster\.name\s*:\s*\).*\$/\1${CLUSTER_NAME}/" /etc/elasticsearch/elasticsearch.yml
-sed -i -e "/bootstrap\.mlockall/s/^#//g;s/^\(bootstrap\.mlockall\s*:\s*\).*\$/\1true/" /etc/elasticsearch/elasticsearch.yml
-sed -i -e "/path\.data/s/^#//g;s/^\(path\.data\s*:\s*\).*\$/\1${DATAPATH_CONFIG}/" /etc/elasticsearch/elasticsearch.yml
+
+mv /etc/elasticsearch/elasticsearch.yml /etc/elasticsearch/elasticsearch.bak
+touch /etc/elasticsearch/elasticsearch.yml
+echo "cluster.name:$CLUSTER_NAME" >> /etc/elasticsearch/elasticsearch.yml
+
+if [ -n "$DATAPATH_CONFIG" ]; then
+    echo "path.data:$DATAPATH_CONFIG" >> /etc/elasticsearch/elasticsearch.yml
+fi
+
+echo "bootstrap.mlockall:true" >> /etc/elasticsearch/elasticsearch.yml
+echo "discovery.zen.ping.multicast.enabled:false" >> /etc/elasticsearch/elasticsearch.yml
+echo "discovery.zen.ping.unicast.hosts:$HOSTS_CONFIG" >> /etc/elasticsearch/elasticsearch.yml
+
+#---------------
+#Updating the properties in the existing configuraiton has been a bit sensitve and requires more testing
+#sed -i -e "/cluster\.name/s/^#//g;s/^\(cluster\.name\s*:\s*\).*\$/\1${CLUSTER_NAME}/" /etc/elasticsearch/elasticsearch.yml
+#sed -i -e "/bootstrap\.mlockall/s/^#//g;s/^\(bootstrap\.mlockall\s*:\s*\).*\$/\1true/" /etc/elasticsearch/elasticsearch.yml
+#sed -i -e "/path\.data/s/^#//g;s/^\(path\.data\s*:\s*\).*\$/\1${DATAPATH_CONFIG}/" /etc/elasticsearch/elasticsearch.yml
 
 #Disable multicast and set master node endpoints
-sed -i -e "/discovery\.zen\.ping\.multicast\.enabled/s/^#//g;s/^\(discovery\.zen\.ping\.multicast\.enabled\s*:\s*\).*\$/\1false/" /etc/elasticsearch/elasticsearch.yml
-sed -i -e "/discovery\.zen\.ping\.unicast\.hosts/s/^#//g;s/^\(discovery\.zen\.ping\.unicast\.hosts\s*:\s*\).*\$/\1${DISCOVERY_HOSTS}/" /etc/elasticsearch/elasticsearch.yml
+#sed -i -e "/discovery\.zen\.ping\.multicast\.enabled/s/^#//g;s/^\(discovery\.zen\.ping\.multicast\.enabled\s*:\s*\).*\$/\1false/" /etc/elasticsearch/elasticsearch.yml
+#sed -i -e "/discovery\.zen\.ping\.unicast\.hosts/s/^#//g;s/^\(discovery\.zen\.ping\.unicast\.hosts\s*:\s*\).*\$/\1${HOSTS_CONFIG}/" /etc/elasticsearch/elasticsearch.yml
+
+# Minimum master nodes nodes/2+1
+# Can be configured via API as well
+# discovery.zen.minimum_master_nodes: 2
+# gateway.expected_nodes: 10
+# Bump this one up a bit
+# gateway.recover_after_time: 5m
+#----------------
 
 #/etc/default/elasticseach
 #Update HEAP Size in this configuration or in upstart service
@@ -311,4 +340,6 @@ sed -i -e "/discovery\.zen\.ping\.unicast\.hosts/s/^#//g;s/^\(discovery\.zen\.pi
 # bin/plugin -i elasticsearch/marvel/latest
 
 #and... start the service
+log "Starting Elasticsearch"
+update-rc.d elasticsearch defaults 95 10
 sudo service elasticsearch start
