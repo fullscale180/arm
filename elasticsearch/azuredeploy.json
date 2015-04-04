@@ -37,19 +37,15 @@
         },
         "subnet1Name": {
             "type": "string",
-            "defaultValue": "Application"
-        },
-        "subnet2Name": {
-            "type": "string",
             "defaultValue": "Data"
         },
         "subnet1Prefix": {
             "type": "string",
             "defaultValue": "10.0.0.0/24"
         },
-        "subnet2Prefix": {
+        "dnsNameforLBIP": {
             "type": "string",
-            "defaultValue": "10.0.1.0/24"
+            "defaultValue":"trent5050"
         },
         "esClusterName": {
             "type": "string",
@@ -106,12 +102,6 @@
                         "properties": {
                             "addressPrefix": "[parameters('subnet1Prefix')]"
                         }
-                    },
-                    {
-                        "name": "[parameters('subnet2Name')]",
-                        "properties": {
-                            "addressPrefix": "[parameters('subnet2Prefix')]"
-                        }
                     }
                 ]
             }
@@ -119,14 +109,13 @@
         {
             "apiVersion": "2014-12-01-preview",
             "type": "Microsoft.Network/publicIPAddresses",
-            "name": "[concat('publicIP', copyIndex())]",
+            "name": "publicIp",
             "location": "[parameters('region')]",
-            "copy": {
-                "name": "publicIPLoop",
-                "count": "[parameters('numberOfInstances')]"
-            },
             "properties": {
-                "publicIPAllocationMethod": "Dynamic"
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('dnsNameforLBIP')]"
+                }
             }
         },
         {
@@ -139,8 +128,7 @@
                 "count": "[parameters('numberOfInstances')]"
             },
             "dependsOn": [
-                "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
-                "[concat('Microsoft.Network/publicIPAddresses/', 'publicIP', copyindex())]"
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]"
             ],
             "properties": {
                 "ipConfigurations": [
@@ -148,9 +136,6 @@
                         "name": "ipconfig1",
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses',concat('publicIP', copyindex()))]"
-                            },
                             "subnet": {
                                 "id": "[variables('subnet1Ref')]"
                             }
@@ -336,6 +321,82 @@
                     ],
                     "commandToExecute": "[concat('bash elasticsearch-azure-install.sh -xn ', parameters('esClusterName'), ' -d ', reference('masterNodeNic0').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic1').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic2').ipConfigurations[0].properties.privateIPAddress)]"
                 }
+            }
+        },
+        {
+          "apiVersion": "2014-12-01-preview",
+          "name": "loadBalancer",
+          "type": "Microsoft.Network/loadBalancers",
+          "location": "[parameters('region')]",
+          "dependsOn": [
+              "[concat('Microsoft.Network/networkInterfaces/', 'nic0')]",
+              "[concat('Microsoft.Network/publicIPAddresses/', 'publicIp')]"
+          ],
+          "properties": {
+              "frontendIPConfigurations": [
+                  {
+                      "name": "LBFE",
+                      "properties": {
+                          "publicIPAddress": {
+                              "id": "[resourceId('Microsoft.Network/publicIPAddresses','publicIp')]"
+                          }
+                      }
+                  }
+              ],
+              "backendAddressPools": [
+                  {
+                      "name": "LBBE",
+                      "properties": {
+                          "backendIPConfigurations": [
+                              {
+                                  "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', 'nic0'),'/ipConfigurations/ipconfig1')]"
+                              },
+                              {
+                                  "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', 'nic1'),'/ipConfigurations/ipconfig1')]"
+                              }
+                          ]
+                      }
+                  }
+                ],
+                "inboundNatRules": [
+                  {
+                      "name": "ssh1",
+                      "properties": {
+                          "frontendIPConfigurations": [
+                              {
+                                  "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer'),'/frontendIPConfigurations/LBFE')]"
+                              }
+                          ],
+                          "backendIPConfiguration": {
+                              "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', 'nic0'),'/ipConfigurations/ipconfig1')]"
+                          },
+                          "protocol": "tcp",
+                          "frontendPort": 22,
+                          "backendPort": 22,
+                          "enableFloatingIP": false
+                      }
+                  }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "LBRule",
+                        "properties": {
+                            "frontendIPConfigurations": [
+                                {
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/LBFE')]"
+                                }
+                            ],
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/LBBE')]"
+                            },
+                            "protocol": "tcp",
+                            "frontendPort": 9200,
+                            "backendPort": 9200,
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 5
+                        }
+                    }
+                ]
             }
         }
     ]
