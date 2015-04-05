@@ -6,7 +6,7 @@ log()
     curl -X POST -H "content-type:text/plain" --data-binary "$(date) | $1" https://logs-01.loggly.com/inputs/d17b3933-b2ed-439c-827c-c7047d992745/tag/es-extension,${HOSTNAME}
 }
 
-log "Begin execution of elasticsearch script extension"
+log "Begin execution of elasticsearch script extension on $(hostname)"
 
 if [ "${UID}" -ne 0 ];
 then
@@ -15,7 +15,18 @@ then
     exit 3
 fi
 
-#WARNING - This is currently test and experimental work
+# TEMP FIX 
+# This is an interim fix for hostname resolution in preview VM
+grep -q "$(hostname)" /etc/hosts
+if [ $? -eq $SUCCESS ]
+then
+  echo "$(hostname)found in /etc/hosts"
+else
+  echo "$(hostname) not found in /etc/hosts"
+  # Append it to the hsots file if not there
+  echo "127.0.0.1 $(hostname)" >> /etc/hosts
+  log "hostname $(hostname) added to /etchosts"
+fi
 
 #Script Parameters
 # ClusterName
@@ -25,7 +36,7 @@ fi
 # Node Name Prefix
 # Is Durable
 # Install Marvel
-while getopts :n:m:d:lxyzsh optname; do
+while getopts :n:d:v:lxyzsh optname; do
     log "Option $optname set with value ${OPTARG}"
   case $optname in
     n)  #set clsuter name
@@ -34,8 +45,8 @@ while getopts :n:m:d:lxyzsh optname; do
     d) #Static dicovery endpoints
       DISCOVERY_ENDPOINTS=${OPTARG}
       ;;
-    m)  #machine name
-      MACHINE_NAME=${OPTARG}
+    v)  #elasticsearch version number
+      ES_VERSION=${OPTARG}
       ;;
     l)  #install marvel
       INSTALL_MARVEL=1
@@ -47,9 +58,9 @@ while getopts :n:m:d:lxyzsh optname; do
       CLIENT_ONLY_NODE=1
       ;;
     z)  #client node
-      CLIENT_DATA_NODE=1
+      DATA_NODE=1
       ;;
-    s) #striped disk volumes
+    s) #use OS striped disk volumes
 	  OS_STRIPED_DISK=1
       ;;
     d) #place data on local resource disk
@@ -190,6 +201,8 @@ fi
 
 scan_partition_format()
 {
+    log "Begin scanning and formatting data disks"
+
     DISKS=($(scan_for_new_disks))
 
 	if [ "${#DISKS}" -eq 0 ];
@@ -235,38 +248,51 @@ setup_data_disk()
     chmod 755 "$1/elasticsearch"
 }
 
-##############
-## MAIN
-##############
+install_java()
+{
+    log "Installing Java"
+    add-apt-repository -y ppa:webupd8team/java
+    apt-get -y update 
+    echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+    echo debconf shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections
+    apt-get -y install oracle-java7-installer
+}
 
+install_es()
+{
+    log "Installing Elaticsearch"
+    # apt-get install approach
+    # This has the added benefit that is simplifies upgrades (user)
+    # Using the debian package because it's easier to explicitly control version and less changes of nodes with different versions
+    #wget -qO - https://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add -
+    #add-apt-repository "deb http://packages.elasticsearch.org/elasticsearch/1.5/debian stable main"
+    #apt-get update && apt-get install elasticsearch
+
+    # DPKG Install Approach
+    # Simple aproach
+    if [ -n "$ES_VERSION" ]; then
+        ES_VERSION="1.5.0"
+    fi
+    sudo wget -q "https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-$ES_VERSION.deb -O elasticsearch.deb"
+    sudo dpkg -i elasticsearch.deb
+}
+
+#########################
+#########################
+
+#NOTE: These first three could be changed to run in parallel (export the functions and use background/wait)
 #Install Oracle Java
 #------------------------
-log "Installing Java"
-add-apt-repository -y ppa:webupd8team/java
-apt-get -y update 
-echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
-echo debconf shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections
-apt-get -y install oracle-java7-installer
+install_java
 
 #
 #Install Elasticsearch
 #-----------------------
-log "Installing Elaticsearch"
-# apt-get install approach
-# This has the added benefit that is simplifies upgrades
-wget -qO - https://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add -
-add-apt-repository "deb http://packages.elasticsearch.org/elasticsearch/1.5/debian stable main"
-apt-get update && apt-get install elasticsearch
-
-# DPKG Install Approach
-# I like the simplicity in this approach and easy to select version
-#sudo wget -q https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.deb -O elasticsearch.deb
-#sudo dpkg -i elasticsearch.deb
+install_es
 
 #Format data disks
 #------------------------
 # Find data disks then partition, format, and mount them as seperate drives
-log "Begin scanning and formatting data disks"
 scan_partition_format
 
 #
@@ -276,17 +302,19 @@ DATAPATH_CONFIG=""
 for D in `find /datadisks/ -mindepth 1 -maxdepth 1 -type d`
 do
     setup_data_disk ${D}
+    # Add to list for elasticsearch configuration
     DATAPATH_CONFIG+="$D/elasticsearch/data,"
 done
+#Remove the extra trailing comma
 DATAPATH_CONFIG="${DATAPATH_CONFIG%?}"
 
 #D=`find ~ -mindepth 1 -maxdepth 1 -type d`
 #DISKS=$(echo "$D" | tr '\n' ',')
 
-#My local IP addresses
-MY_IPS=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
+#Get a list of my local IP addresses to trim my own out of the list of discovery IPs passed
+MY_IPS=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
 
-#Format the static host endpooints to what elasticsearch configuratino expects
+#Format the static host endpooints for elasticsearch configureion ["",""] format
 HOSTS_CONFIG="[\"${DISCOVERY_ENDPOINTS//-/\",\"}\"]"
 
 log "Update configuration with data path list of $DATAPATH_CONFIG"
@@ -295,18 +323,35 @@ log "Update configuration with hosts configuration of $HOSTS_CONFIG"
 #Configure Elasticsearch
 #---------------------------
 #Set elasticsearch.yml configuration settings
-
 mv /etc/elasticsearch/elasticsearch.yml /etc/elasticsearch/elasticsearch.bak
-touch /etc/elasticsearch/elasticsearch.yml
-echo "cluster.name:$CLUSTER_NAME" >> /etc/elasticsearch/elasticsearch.yml
 
+# Set cluster and machine names - just use hostname for the node.name
+echo "cluster.name: $CLUSTER_NAME" >> /etc/elasticsearch/elasticsearch.yml
+echo "node.name: $(hostname)" >> /etc/elasticsearch/elasticsearch.yml
+
+# If we have data disks defined then use those in elasticsearch.yml
 if [ -n "$DATAPATH_CONFIG" ]; then
-    echo "path.data:$DATAPATH_CONFIG" >> /etc/elasticsearch/elasticsearch.yml
+    echo "path.data: $DATAPATH_CONFIG" >> /etc/elasticsearch/elasticsearch.yml
 fi
 
-echo "bootstrap.mlockall:true" >> /etc/elasticsearch/elasticsearch.yml
-echo "discovery.zen.ping.multicast.enabled:false" >> /etc/elasticsearch/elasticsearch.yml
-echo "discovery.zen.ping.unicast.hosts:$HOSTS_CONFIG" >> /etc/elasticsearch/elasticsearch.yml
+# Set mlockall to true
+echo "bootstrap.mlockall: true" >> /etc/elasticsearch/elasticsearch.yml
+
+# Set to static node discovery
+echo "discovery.zen.ping.multicast.enabled: false" >> /etc/elasticsearch/elasticsearch.yml
+echo "discovery.zen.ping.unicast.hosts: $HOSTS_CONFIG" >> /etc/elasticsearch/elasticsearch.yml
+
+# Configure elaticsearch node type
+if [$MASTER_ONLY_NODE -ne 0 ]; then
+    echo "node.master: true" >> /etc/elasticsearch/elasticsearch.yml
+    echo "node.data: false" >> /etc/elasticsearch/elasticsearch.yml
+else if [$DATA_NODE -ne 0 ]; then
+    echo "node.master: false" >> /etc/elasticsearch/elasticsearch.yml
+    echo "node.data: true" >> /etc/elasticsearch/elasticsearch.yml
+else
+    echo "node.master: true" >> /etc/elasticsearch/elasticsearch.yml
+    echo "node.data: true" >> /etc/elasticsearch/elasticsearch.yml
+fi
 
 #---------------
 #Updating the properties in the existing configuraiton has been a bit sensitve and requires more testing
@@ -319,27 +364,32 @@ echo "discovery.zen.ping.unicast.hosts:$HOSTS_CONFIG" >> /etc/elasticsearch/elas
 #sed -i -e "/discovery\.zen\.ping\.unicast\.hosts/s/^#//g;s/^\(discovery\.zen\.ping\.unicast\.hosts\s*:\s*\).*\$/\1${HOSTS_CONFIG}/" /etc/elasticsearch/elasticsearch.yml
 
 # Minimum master nodes nodes/2+1
-# Can be configured via API as well
+# These can be configured via API as well - (requires cluster size)
 # discovery.zen.minimum_master_nodes: 2
 # gateway.expected_nodes: 10
-# Bump this one up a bit
 # gateway.recover_after_time: 5m
 #----------------
-
-#/etc/default/elasticseach
-#Update HEAP Size in this configuration or in upstart service
-#ES_HEAP_SIZE=`free -m |grep Mem | awk "{if ($2/2 >31744)  print 31744;else print $2/2;}"`
 
 # Configure Environment
 #TODO
 
+#/etc/default/elasticseach
+#Update HEAP Size in this configuration or in upstart service
+#Set Elasticsearch heap size to 50% of system memory
+#TODO: Move this to an init.d script so we can handle instance size increases
+ES_HEAP=`free -m |grep Mem | awk '{if ($2/2 >31744)  print 31744;else print $2/2;}'`
+sed -i -e "/ES_HEAP_SIZE/s/^#//g;s/^\(ES_HEAP_SIZE\s*=\s*\).*\$/\1${ES_HEAP}/" /etc/default/elasticseach
+
+#Optionally Install Marvel
+if [ ${INSTALL_MARVEL} -ne 0 ];
+    then
+    /usr/share/elasticsearch/bin/plugin -i elasticsearch/marvel/latest
+fi
+
 #Install Monit
 #TODO
 
-#Optionally Install Marvel
-# bin/plugin -i elasticsearch/marvel/latest
-
 #and... start the service
-log "Starting Elasticsearch"
+log "Starting Elasticsearch on $(hostname)"
 update-rc.d elasticsearch defaults 95 10
 sudo service elasticsearch start
