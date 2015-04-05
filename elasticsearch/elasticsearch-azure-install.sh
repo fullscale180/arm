@@ -3,7 +3,7 @@
 
 log()
 {
-    curl -X POST -H "content-type:text/plain" --data-binary "${HOSTNAME}| $1" https://logs-01.loggly.com/inputs/d17b3933-b2ed-439c-827c-c7047d992745/tag/es-extension,${HOSTNAME}
+    curl -X POST -H "content-type:text/plain" --data-binary "${HOSTNAME} - $1" https://logs-01.loggly.com/inputs/d17b3933-b2ed-439c-827c-c7047d992745/tag/es-extension,${HOSTNAME}
 }
 
 log "Begin execution of elasticsearch script extension on $(hostname)"
@@ -347,13 +347,13 @@ log "Update configuration with hosts configuration of $HOSTS_CONFIG"
 echo "discovery.zen.ping.multicast.enabled: false" >> /etc/elasticsearch/elasticsearch.yml
 echo "discovery.zen.ping.unicast.hosts: $HOSTS_CONFIG" >> /etc/elasticsearch/elasticsearch.yml
 
-log "Configure master/client/data node type"
+log "Configure master/client/data node type flags mater-$MASTER_ONLY_NODE data-$DATA_NODE"
 # Configure elaticsearch node type
-if [$MASTER_ONLY_NODE -ne 0 ]; then
+if [ ${MASTER_ONLY_NODE} -ne 0 ]; then
     log "Configure node as master only"
     echo "node.master: true" >> /etc/elasticsearch/elasticsearch.yml
     echo "node.data: false" >> /etc/elasticsearch/elasticsearch.yml
-else if [$DATA_NODE -ne 0 ]; then
+elif [ ${DATA_NODE} -ne 0 ]; then
     log "Configure node as data only"
     echo "node.master: false" >> /etc/elasticsearch/elasticsearch.yml
     echo "node.data: true" >> /etc/elasticsearch/elasticsearch.yml
@@ -392,7 +392,7 @@ ES_HEAP=`free -m |grep Mem | awk '{if ($2/2 >31744)  print 31744;else print $2/2
 sed -i -e "/ES_HEAP_SIZE/s/^#//g;s/^\(ES_HEAP_SIZE\s*=\s*\).*\$/\1${ES_HEAP}/" /etc/default/elasticseach
 
 #Optionally Install Marvel
-if [ $INSTALL_MARVEL -ne 0 ];
+if [ ${INSTALL_MARVEL} -ne 0 ];
     then
     /usr/share/elasticsearch/bin/plugin -i elasticsearch/marvel/latest
 fi
