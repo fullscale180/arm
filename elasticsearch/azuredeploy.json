@@ -375,6 +375,23 @@
                           "backendPort": 22,
                           "enableFloatingIP": false
                       }
+                  },
+                  {
+                      "name": "ssh2",
+                      "properties": {
+                          "frontendIPConfigurations": [
+                              {
+                                  "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer'),'/frontendIPConfigurations/LBFE')]"
+                              }
+                          ],
+                          "backendIPConfiguration": {
+                              "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', 'nic1'),'/ipConfigurations/ipconfig1')]"
+                          },
+                          "protocol": "tcp",
+                          "frontendPort": 22322,
+                          "backendPort": 22,
+                          "enableFloatingIP": false
+                      }
                   }
                 ],
                 "loadBalancingRules": [
