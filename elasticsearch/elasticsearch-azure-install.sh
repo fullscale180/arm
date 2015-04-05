@@ -3,7 +3,7 @@
 
 log()
 {
-    curl -X POST -H "content-type:text/plain" --data-binary "$(date) | $1" https://logs-01.loggly.com/inputs/d17b3933-b2ed-439c-827c-c7047d992745/tag/es-extension,${HOSTNAME}
+    curl -X POST -H "content-type:text/plain" --data-binary "${HOSTNAME}| $1" https://logs-01.loggly.com/inputs/d17b3933-b2ed-439c-827c-c7047d992745/tag/es-extension,${HOSTNAME}
 }
 
 log "Begin execution of elasticsearch script extension on $(hostname)"
@@ -36,6 +36,13 @@ fi
 # Node Name Prefix
 # Is Durable
 # Install Marvel
+CLUSTER_NAME="elasticsearch"
+DISCOVERY_ENDPOINTS=""
+INSTALL_MARVEL=0
+CLIENT_ONLY_NODE=0
+DATA_NODE=0
+MASTER_ONLY_NODE=0
+
 while getopts :n:d:v:lxyzsh optname; do
     log "Option $optname set with value ${OPTARG}"
   case $optname in
@@ -317,9 +324,6 @@ MY_IPS=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9
 #Format the static host endpooints for elasticsearch configureion ["",""] format
 HOSTS_CONFIG="[\"${DISCOVERY_ENDPOINTS//-/\",\"}\"]"
 
-log "Update configuration with data path list of $DATAPATH_CONFIG"
-log "Update configuration with hosts configuration of $HOSTS_CONFIG"
-
 #Configure Elasticsearch
 #---------------------------
 #Set elasticsearch.yml configuration settings
@@ -331,24 +335,30 @@ echo "node.name: $(hostname)" >> /etc/elasticsearch/elasticsearch.yml
 
 # If we have data disks defined then use those in elasticsearch.yml
 if [ -n "$DATAPATH_CONFIG" ]; then
+    log "Update configuration with data path list of $DATAPATH_CONFIG"
     echo "path.data: $DATAPATH_CONFIG" >> /etc/elasticsearch/elasticsearch.yml
 fi
 
 # Set mlockall to true
 echo "bootstrap.mlockall: true" >> /etc/elasticsearch/elasticsearch.yml
 
-# Set to static node discovery
+# Set to static node discovery and add static hosts
+log "Update configuration with hosts configuration of $HOSTS_CONFIG"
 echo "discovery.zen.ping.multicast.enabled: false" >> /etc/elasticsearch/elasticsearch.yml
 echo "discovery.zen.ping.unicast.hosts: $HOSTS_CONFIG" >> /etc/elasticsearch/elasticsearch.yml
 
+log "Configure master/client/data node type"
 # Configure elaticsearch node type
 if [$MASTER_ONLY_NODE -ne 0 ]; then
+    log "Configure node as master only"
     echo "node.master: true" >> /etc/elasticsearch/elasticsearch.yml
     echo "node.data: false" >> /etc/elasticsearch/elasticsearch.yml
 else if [$DATA_NODE -ne 0 ]; then
+    log "Configure node as data only"
     echo "node.master: false" >> /etc/elasticsearch/elasticsearch.yml
     echo "node.data: true" >> /etc/elasticsearch/elasticsearch.yml
 else
+    log "Configure node for master and data"
     echo "node.master: true" >> /etc/elasticsearch/elasticsearch.yml
     echo "node.data: true" >> /etc/elasticsearch/elasticsearch.yml
 fi
@@ -377,11 +387,12 @@ fi
 #Update HEAP Size in this configuration or in upstart service
 #Set Elasticsearch heap size to 50% of system memory
 #TODO: Move this to an init.d script so we can handle instance size increases
+log "Configure elasticsearch heap size"
 ES_HEAP=`free -m |grep Mem | awk '{if ($2/2 >31744)  print 31744;else print $2/2;}'`
 sed -i -e "/ES_HEAP_SIZE/s/^#//g;s/^\(ES_HEAP_SIZE\s*=\s*\).*\$/\1${ES_HEAP}/" /etc/default/elasticseach
 
 #Optionally Install Marvel
-if [ ${INSTALL_MARVEL} -ne 0 ];
+if [ $INSTALL_MARVEL -ne 0 ];
     then
     /usr/share/elasticsearch/bin/plugin -i elasticsearch/marvel/latest
 fi
