@@ -267,7 +267,6 @@ install_java()
 
 install_es()
 {
-    log "Installing Elaticsearch"
     # apt-get install approach
     # This has the added benefit that is simplifies upgrades (user)
     # Using the debian package because it's easier to explicitly control version and less changes of nodes with different versions
@@ -277,10 +276,11 @@ install_es()
 
     # DPKG Install Approach
     # Simple aproach
-    if [ -n "$ES_VERSION" ]; then
+    if [ -z "$ES_VERSION" ]; then
         ES_VERSION="1.5.0"
     fi
-    sudo wget -q "https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-$ES_VERSION.deb -O elasticsearch.deb"
+    log "Installing Elaticsearch Version - $ES_VERSION"
+    sudo wget -q "https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-$ES_VERSION.deb" -O elasticsearch.deb
     sudo dpkg -i elasticsearch.deb
 }
 
@@ -363,7 +363,7 @@ else
     echo "node.data: true" >> /etc/elasticsearch/elasticsearch.yml
 fi
 
-#---------------
+#--------------- TEMP (We will use this for the update path yet) ---------------
 #Updating the properties in the existing configuraiton has been a bit sensitve and requires more testing
 #sed -i -e "/cluster\.name/s/^#//g;s/^\(cluster\.name\s*:\s*\).*\$/\1${CLUSTER_NAME}/" /etc/elasticsearch/elasticsearch.yml
 #sed -i -e "/bootstrap\.mlockall/s/^#//g;s/^\(bootstrap\.mlockall\s*:\s*\).*\$/\1true/" /etc/elasticsearch/elasticsearch.yml
@@ -381,8 +381,7 @@ fi
 #----------------
 
 # Configure Environment
-#TODO
-
+#----------------------
 #/etc/default/elasticseach
 #Update HEAP Size in this configuration or in upstart service
 #Set Elasticsearch heap size to 50% of system memory
@@ -404,3 +403,6 @@ fi
 log "Starting Elasticsearch on $(hostname)"
 update-rc.d elasticsearch defaults 95 10
 sudo service elasticsearch start
+log "complete elasticsearch setup and started"
+exit 0
+
