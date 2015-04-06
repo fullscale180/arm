@@ -3,53 +3,128 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "adminUsername": {
-            "type": "string"
+            "type": "string",
+            "metadata": {
+                "Description": "Admin username used when provisioning virtual machines"
+            }
         },
         "adminPassword": {
-            "type": "securestring"
+            "type": "securestring",
+            "metadata": {
+                "Description": "Admin password used when provisioning virtual machines"
+            }
         },
         "storageAccountName": {
             "type": "string",
-            "defaultValue" : "uniqueStorageAccountName"
-        },
-        "numberOfInstances": {
-            "type": "int",
-            "defaultValue": 2
+            "defaultValue" : "uniqueStorageAccountName",
+            "metadata": {
+                "Description": "Storage account name"
+            }
         },
         "subscriptionId": {
-            "type": "string"
+            "type": "string",
+            "metadata": {
+                "Description": "Microsoft Azure SubscriptionId to provision resources to"
+            }
         },
         "region": {
             "type": "string",
-            "defaultValue": "West US"
+            "defaultValue": "West US",
+            "metadata": {
+                "Description": "Location where resources will be provisioned"
+            }
         },
         "virtualNetworkName": {
             "type": "string",
-            "defaultValue": "myVNET"
+            "defaultValue": "myVNET",
+            "metadata": {
+                "Description": "Virtual Network"
+            }
         },
-        "vmSize": {
+        "vmSizeMasterNodes": {
             "type": "string",
-            "defaultValue": "Standard_A0"
+            "defaultValue": "Standard_A0",
+            "metadata": {
+                "Description": "Size of the Elasticsearch master nodes"
+            }
+        },
+        "vmSizeDataNodes": {
+            "type": "string",
+            "defaultValue": "Standard_A1",
+            "metadata": {
+                "Description": "Size of the Elasticsearch data nodes"
+            }
+        },
+        "dataNodes": {
+            "type": "int",
+            "defaultValue": 2,
+            "metadata": {
+                "Description": "Number of Elasticsearch data nodes"
+            }
         },
         "addressPrefix": {
             "type": "string",
-            "defaultValue": "10.0.0.0/16"
+            "defaultValue": "10.0.0.0/16",
+            "metadata": {
+                "Description": "Address space for the VNET"
+            }
         },
         "subnet1Name": {
             "type": "string",
-            "defaultValue": "Data"
+            "defaultValue": "Data",
+            "metadata": {
+                "Description": "Subnet name for the VNET that resources will be provisionined in to"
+            }
         },
         "subnet1Prefix": {
             "type": "string",
-            "defaultValue": "10.0.0.0/24"
+            "defaultValue": "10.0.0.0/24",
+            "metadata": {
+                "Description": "Address space for the subnet"
+            }
         },
         "dnsNameforLBIP": {
             "type": "string",
-            "defaultValue":"trent5050"
+            "defaultValue":"uniqueName",
+            "metadata": {
+                "Description": "Load balancer subdomain name: for example (<subdomain>.westus.cloudapp.azure.com)"
+            }
         },
         "esClusterName": {
             "type": "string",
-            "defaultValue": "elasticsearch"
+            "defaultValue": "elasticsearch",
+            "metadata": {
+                "Description": "The name of the elasticsearch cluster"
+            }
+        },
+        "esVersion": {
+            "type": "string",
+            "defaultValue": "1.5.0",
+            "allowedValues": ["1.5.0","1.4.4","1.3.8"],
+            "metadata": {
+                "Description": "Elasticsearch versino to install"
+            }
+        },
+        "dataDisksCount": {
+            "type": "int",
+            "defaultValue":2,
+            "metadata": {
+                "Description": "Number of data disks to attach to each data node (consider VM size limits when setting this)"
+            }
+        },
+        "dataDiskSize": {
+            "type": "int",
+            "defaultValue":200,
+            "metadata": {
+                "Description": "Size of each data disk attached to data nodes in (Gb)"
+            }
+        },
+        "installMarvel": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "Description": "Install the marvel plugin"
+            }
         }
     },
     "variables": {
@@ -57,7 +132,8 @@
         "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
         "subnet1Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet1Name'))]",
-        "sourceImageName": "[concat('/',parameters('subscriptionId'),'/services/images/',variables('vmSourceImageName'))]"
+        "sourceImageName": "[concat('/',parameters('subscriptionId'),'/services/images/',variables('vmSourceImageName'))]",
+        "masterNodes": "3"
     },
     "resources": [
         {
@@ -125,7 +201,7 @@
             "location": "[parameters('region')]",
             "copy": {
                 "name": "nicLoop",
-                "count": "[parameters('numberOfInstances')]"
+                "count": "[parameters('dataNodes')]"
             },
             "dependsOn": [
                 "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]"
@@ -151,7 +227,7 @@
             "location": "[parameters('region')]",
             "copy": {
                 "name": "virtualMachineLoop",
-                "count": "[parameters('numberOfInstances')]"
+                "count": "[parameters('dataNodes')]"
             },
             "dependsOn": [
                 "[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]",
@@ -164,10 +240,10 @@
                     "id": "[resourceId('Microsoft.Compute/availabilitySets', 'elasticsearchData')]"
                 },
                 "hardwareProfile": {
-                    "vmSize": "[parameters('vmSize')]"
+                    "vmSize": "[parameters('vmSizeDataNodes')]"
                 },
                 "osProfile": {
-                    "computername": "[concat('vm', copyIndex())]",
+                    "computername": "[concat('esData', copyIndex())]",
                     "adminUsername": "[parameters('adminUsername')]",
                     "adminPassword": "[parameters('adminPassword')]"
                 },
@@ -178,21 +254,20 @@
                 "dataDisks" : [
                     {
                         "name" : "datadisk1",
-                        "diskSizeGB" : "200",
+                        "diskSizeGB" : "parameters('dataDiskSize')",
                         "lun" : 0,
                         "vhd":{
                             "Uri" : "[concat('http://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/','myvm', copyindex(),'dataDisk1' ,'.vhd')]"
                         }
                     },{
                         "name" : "datadisk2",
-                        "diskSizeGB" : "200",
+                        "diskSizeGB" : "parameters('dataDiskSize')",
                         "lun" : 1,
                         "vhd":{
                             "Uri" : "[concat('http://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/','myvm', copyindex() ,'dataDisk2','.vhd')]"
                         }
                     }
-                ],    
-
+                ],
                 "destinationVhdsContainer" : "[concat('http://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
             },
                 "networkProfile": {
@@ -211,7 +286,7 @@
             "location": "[parameters('region')]",
             "copy": {
                 "name": "virtualMachineExtensionsLoop",
-                "count": "[parameters('numberOfInstances')]"
+                "count": "[parameters('dataNodes')]"
             },
             "dependsOn": [
                 "[concat('Microsoft.Compute/virtualMachines/', 'myvm', copyindex())]",
@@ -227,7 +302,7 @@
                     "fileUris": [
                         "https://fs180.blob.core.windows.net/public/elasticsearch-azure-install.sh"
                     ],
-                    "commandToExecute": "[concat('bash elasticsearch-azure-install.sh -n ', parameters('esClusterName'), ' -d ', reference('masterNodeNic0').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic1').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic2').ipConfigurations[0].properties.privateIPAddress)]"
+                    "commandToExecute": "[concat('bash elasticsearch-azure-install.sh -zn ', parameters('esClusterName'), ' -v ',parameters('esVersion'),' -d ', reference('masterNodeNic0').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic1').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic2').ipConfigurations[0].properties.privateIPAddress)]"
                 }
             }
         },
@@ -238,7 +313,7 @@
             "location": "[parameters('region')]",
             "copy": {
                 "name": "masterNodesNicLoop",
-                "count": 3
+                "count": "[variables('masterNodes')]"
             },
             "dependsOn": [
                 "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]"
@@ -264,7 +339,7 @@
             "location": "[parameters('region')]",
             "copy": {
                 "name": "masterVmLoop",
-                "count": 3
+                "count": "variables('masterNodes')"
             },
             "dependsOn": [
                 "[concat('Microsoft.Network/networkInterfaces/', 'masterNodeNic', copyindex())]",
@@ -276,10 +351,10 @@
                     "id": "[resourceId('Microsoft.Compute/availabilitySets', 'elasticsearchMaster')]"
                 },
                 "hardwareProfile": {
-                    "vmSize": "[parameters('vmSize')]"
+                    "vmSize": "[parameters('vmSizeMasterNodes')]"
                 },
                 "osProfile": {
-                    "computername": "[concat('masterVm', copyIndex())]",
+                    "computername": "[concat('esMaster', copyIndex())]",
                     "adminUsername": "[parameters('adminUsername')]",
                     "adminPassword": "[parameters('adminPassword')]"
                 },
@@ -305,7 +380,7 @@
             "location": "[parameters('region')]",
             "copy": {
                 "name": "masterVMExtensionsLoop",
-                "count": 3
+                "count": "variables('masterNodes')"
             },
             "dependsOn": [
                 "[concat('Microsoft.Compute/virtualMachines/', 'masterVm', copyindex())]",
@@ -319,7 +394,7 @@
                     "fileUris": [
                         "https://fs180.blob.core.windows.net/public/elasticsearch-azure-install.sh"
                     ],
-                    "commandToExecute": "[concat('bash elasticsearch-azure-install.sh -xn ', parameters('esClusterName'), ' -d ', reference('masterNodeNic0').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic1').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic2').ipConfigurations[0].properties.privateIPAddress)]"
+                    "commandToExecute": "[concat('bash elasticsearch-azure-install.sh -xn ', parameters('esClusterName'), ' -v ',parameters('esVersion'), ' -d ', reference('masterNodeNic0').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic1').ipConfigurations[0].properties.privateIPAddress,'-',reference('masterNodeNic2').ipConfigurations[0].properties.privateIPAddress)]"
                 }
             }
         },

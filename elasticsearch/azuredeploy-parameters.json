@@ -1,6 +1,9 @@
 {
+    "dnsNameforLBIP": {
+        "value":"trent2520"
+    },
     "storageAccountName" : {
-        "value":"trenttest2"
+        "value":"trentes1"
     },
     "adminUsername": {
         "value": "trent"
@@ -8,7 +11,7 @@
     "adminPassword": {
         "value": "Blue!2010"
     },
-    "numberOfInstances": {
+    "dataNodes": {
         "value": 2
     },
     "subscriptionId": {
@@ -18,27 +21,13 @@
         "value": "West US"
     },
     "virtualNetworkName": {
-        "value": "myVNET2"
-    },
-    "vmSize": {
-        "value": "Standard_A0"
-    },
-    "subnet1Name": {
-        "value": "Subnet-1"
-    },
-    "subnet2Name": {
-        "value": "Subnet-2"
-    },
-    "addressPrefix": {
-        "value": "10.0.0.0/16"
-    },
-    "subnet1Prefix": {
-        "value": "10.0.0.0/24"
-    },
-    "subnet2Prefix": {
-        "value": "10.0.1.0/24"
+        "value": "trentVNET1"
     },
     "esClusterName": {
         "value": "elasticsearch-fullscale"
+    },
+    "vmSizeDataNodes": {
+        "type": "string",
+        "defaultValue": "Standard_A1"
     }
 }
