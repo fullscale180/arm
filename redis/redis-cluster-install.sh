@@ -5,27 +5,34 @@
 ########################################################
 help()
 {
-	echo "HELP!"
+	echo "This script installs a Redis cluster on the Ubuntu virtual machine image"
+	echo "Available parameters:"
+	echo "-n Cluster_Name"
+	echo "-v Redis_Version_Number"
 }
 
 log()
 {
-    curl -X POST -H "content-type:text/plain" --data-binary "$(date) | $1" https://logs-01.loggly.com/inputs/681451c7-fb5e-409b-a263-b06b29c9560f/tag/redis-extension,${HOSTNAME}
+	# If you want to enable this logging add a un-comment the line below and add your account key 
+    curl -X POST -H "content-type:text/plain" --data-binary "$(date) | ${HOSTNAME} | $1" https://logs-01.loggly.com/inputs/681451c7-fb5e-409b-a263-b06b29c9560f/tag/redis-extension,${HOSTNAME}
+	echo "$1"
 }
 
-log "Begin execution of Redis installation script extension"
+log "Begin execution of Redis installation script extension on ${HOSTNAME}"
 
-if [ "$(whoami)" != "root" ]; then
-	log "ERROR: User is not authorized"
-	echo "ERROR : You must be root to run this program"
-	exit 1
+if [ "${UID}" -ne 0 ];
+then
+    log "Script executed without root permissions"
+    echo "You must be root to run this program." >&2
+    exit 3
 fi
 
+
 # Parse script parameters
-while getopts :n:v:p:h FLAGS; do
-  log "Flag ${FLAGS} passed with ${OPTARG}"
+while getopts :n:v:p:h optname; do
+  log "Option $optname set with value ${OPTARG}"
   
-  case $FLAGS in
+  case $optname in
     n)  # Cluster name
       CLUSTER_NAME=${OPTARG}
       ;;
