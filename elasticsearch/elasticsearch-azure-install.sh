@@ -1,12 +1,27 @@
 #!/bin/bash
 
+### Trent Swanson (Full Scale 180 Inc)
+### 
+### Warning! This script partitions and formats disk information be careful where you run it
+###          This script is currently under development and has only been tested on Ubuntu images in Azure
+###          This script is not currently idempotent and only works for provisioning at the moment
 
+### Remaining work items
+### -Alternate discovery options (Azure Storage)
+### -Implement Idempotency and Configuration Change Support
+### -Implement OS Disk Striping Option (Currenlty use Elasticsearch Disk Striping)
+### -Implement Non-Durable Option (Put data on resource disk)
+### -Configure Data/Work Paths
+### -Recovery Settings (Not critical as they can be changed via API)
+
+# Log method to control/redirect log output
 log()
 {
+    # If you want to enable this logging add a un-comment the line below and add your account id
     curl -X POST -H "content-type:text/plain" --data-binary "${HOSTNAME} - $1" https://logs-01.loggly.com/inputs/d17b3933-b2ed-439c-827c-c7047d992745/tag/es-extension,${HOSTNAME}
 }
 
-log "Begin execution of elasticsearch script extension on $(hostname)"
+log "Begin execution of elasticsearch script extension on ${HOSTNAME}"
 
 if [ "${UID}" -ne 0 ];
 then
@@ -17,26 +32,20 @@ fi
 
 # TEMP FIX 
 # This is an interim fix for hostname resolution in preview VM
-grep -q "$(hostname)" /etc/hosts
+grep -q "${HOSTNAME}" /etc/hosts
 if [ $? -eq $SUCCESS ]
 then
-  echo "$(hostname)found in /etc/hosts"
+  echo "${HOSTNAME}found in /etc/hosts"
 else
-  echo "$(hostname) not found in /etc/hosts"
+  echo "${HOSTNAME} not found in /etc/hosts"
   # Append it to the hsots file if not there
   echo "127.0.0.1 $(hostname)" >> /etc/hosts
-  log "hostname $(hostname) added to /etchosts"
+  log "hostname ${HOSTNAME} added to /etchosts"
 fi
 
 #Script Parameters
-# ClusterName
-# RoleTypes
-# Default Shards
-# Default Replicas
-# Node Name Prefix
-# Is Durable
-# Install Marvel
 CLUSTER_NAME="elasticsearch"
+ES_VERSION="1.5.0"
 DISCOVERY_ENDPOINTS=""
 INSTALL_MARVEL=0
 CLIENT_ONLY_NODE=0
@@ -88,7 +97,7 @@ done
 help()
 {
     #TODO: Add help text here
-	echo "HELP!"
+	echo "HELP Me! This script has no help documentation yet =("
 }
 
 #Validate Configurations
@@ -246,6 +255,7 @@ scan_partition_format()
 	done
 }
 
+# Configure Elasticsearch Data Disk Folder and Permissions
 setup_data_disk()
 {
     log "Configuring disk $1/elasticsearch/data"
@@ -255,6 +265,7 @@ setup_data_disk()
     chmod 755 "$1/elasticsearch"
 }
 
+# Install Oracle Java
 install_java()
 {
     log "Installing Java"
@@ -265,6 +276,7 @@ install_java()
     apt-get -y install oracle-java7-installer
 }
 
+# Install Elasticsearch
 install_es()
 {
     # apt-get install approach
@@ -274,11 +286,10 @@ install_es()
     #add-apt-repository "deb http://packages.elasticsearch.org/elasticsearch/1.5/debian stable main"
     #apt-get update && apt-get install elasticsearch
 
-    # DPKG Install Approach
-    # Simple aproach
-    if [ -z "$ES_VERSION" ]; then
-        ES_VERSION="1.5.0"
-    fi
+    # if [ -z "$ES_VERSION" ]; then
+    #     ES_VERSION="1.5.0"
+    # fi
+
     log "Installing Elaticsearch Version - $ES_VERSION"
     sudo wget -q "https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-$ES_VERSION.deb" -O elasticsearch.deb
     sudo dpkg -i elasticsearch.deb
@@ -287,7 +298,8 @@ install_es()
 #########################
 #########################
 
-#NOTE: These first three could be changed to run in parallel (export the functions and use background/wait)
+#NOTE: These first three could be changed to run in parallel
+#      Future enhancement - (export the functions and use background/wait to run in parallel)
 #Install Oracle Java
 #------------------------
 install_java
@@ -308,6 +320,7 @@ scan_partition_format
 DATAPATH_CONFIG=""
 for D in `find /datadisks/ -mindepth 1 -maxdepth 1 -type d`
 do
+    #Configure disk permssions and folder for storage
     setup_data_disk ${D}
     # Add to list for elasticsearch configuration
     DATAPATH_CONFIG+="$D/elasticsearch/data,"
@@ -318,7 +331,7 @@ DATAPATH_CONFIG="${DATAPATH_CONFIG%?}"
 #D=`find ~ -mindepth 1 -maxdepth 1 -type d`
 #DISKS=$(echo "$D" | tr '\n' ',')
 
-#Get a list of my local IP addresses to trim my own out of the list of discovery IPs passed
+#Get a list of my local IP addresses so we can trim this machines IP out of the discovery list
 MY_IPS=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
 
 #Format the static host endpooints for elasticsearch configureion ["",""] format
@@ -326,21 +339,18 @@ HOSTS_CONFIG="[\"${DISCOVERY_ENDPOINTS//-/\",\"}\"]"
 
 #Configure Elasticsearch
 #---------------------------
-#Set elasticsearch.yml configuration settings
+#Backup the current elasticsearch configuration file
 mv /etc/elasticsearch/elasticsearch.yml /etc/elasticsearch/elasticsearch.bak
 
-# Set cluster and machine names - just use hostname for the node.name
+# Set cluster and machine names - just use hostname for our node.name
 echo "cluster.name: $CLUSTER_NAME" >> /etc/elasticsearch/elasticsearch.yml
-echo "node.name: $(hostname)" >> /etc/elasticsearch/elasticsearch.yml
+echo "node.name: ${HOSTNAME}" >> /etc/elasticsearch/elasticsearch.yml
 
 # If we have data disks defined then use those in elasticsearch.yml
 if [ -n "$DATAPATH_CONFIG" ]; then
     log "Update configuration with data path list of $DATAPATH_CONFIG"
     echo "path.data: $DATAPATH_CONFIG" >> /etc/elasticsearch/elasticsearch.yml
 fi
-
-# Set mlockall to true
-echo "bootstrap.mlockall: true" >> /etc/elasticsearch/elasticsearch.yml
 
 # Set to static node discovery and add static hosts
 log "Update configuration with hosts configuration of $HOSTS_CONFIG"
@@ -357,6 +367,10 @@ elif [ ${DATA_NODE} -ne 0 ]; then
     log "Configure node as data only"
     echo "node.master: false" >> /etc/elasticsearch/elasticsearch.yml
     echo "node.data: true" >> /etc/elasticsearch/elasticsearch.yml
+elif [ ${CLIENT_ONLY_NODE} -ne 0 ]; then
+    log "Configure node as data only"
+    echo "node.master: false" >> /etc/elasticsearch/elasticsearch.yml
+    echo "node.data: false" >> /etc/elasticsearch/elasticsearch.yml
 else
     log "Configure node for master and data"
     echo "node.master: true" >> /etc/elasticsearch/elasticsearch.yml
@@ -374,11 +388,12 @@ fi
 #sed -i -e "/discovery\.zen\.ping\.unicast\.hosts/s/^#//g;s/^\(discovery\.zen\.ping\.unicast\.hosts\s*:\s*\).*\$/\1${HOSTS_CONFIG}/" /etc/elasticsearch/elasticsearch.yml
 
 # Minimum master nodes nodes/2+1
-# These can be configured via API as well - (requires cluster size)
+# These can be configured via API as well - (_cluster/settings)
 # discovery.zen.minimum_master_nodes: 2
 # gateway.expected_nodes: 10
 # gateway.recover_after_time: 5m
-#----------------
+#----------------------
+
 
 # Configure Environment
 #----------------------
@@ -386,9 +401,9 @@ fi
 #Update HEAP Size in this configuration or in upstart service
 #Set Elasticsearch heap size to 50% of system memory
 #TODO: Move this to an init.d script so we can handle instance size increases
-log "Configure elasticsearch heap size"
 ES_HEAP=`free -m |grep Mem | awk '{if ($2/2 >31744)  print 31744;else print $2/2;}'`
-sed -i -e "/ES_HEAP_SIZE/s/^#//g;s/^\(ES_HEAP_SIZE\s*=\s*\).*\$/\1${ES_HEAP}/" /etc/default/elasticseach
+log "Configure elasticsearch heap size - $ES_HEAP"
+echo "ES_HEAP_SIZE=${ES_HEAP}/" /etc/default/elasticseach
 
 #Optionally Install Marvel
 if [ ${INSTALL_MARVEL} -ne 0 ];
@@ -400,7 +415,7 @@ fi
 #TODO
 
 #and... start the service
-log "Starting Elasticsearch on $(hostname)"
+log "Starting Elasticsearch on ${HOSTNAME}"
 update-rc.d elasticsearch defaults 95 10
 sudo service elasticsearch start
 log "complete elasticsearch setup and started"
