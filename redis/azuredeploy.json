@@ -116,8 +116,8 @@
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
         "subnet1Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet1Name'))]",
         "sourceImageName": "[concat('/',parameters('subscriptionId'),'/services/images/',variables('vmSourceImageName'))]",
-        "computerNamePrefix": "redisnode",
-        "scriptUrl": "https://fs180.blob.core.windows.net/public/redis-cluster-install.sh"
+        "computerNamePrefix": "redisnode_",
+        "scriptUrl": "https://fs180.blob.core.windows.net/public/"
     },
     "resources": [
         {
@@ -291,7 +291,8 @@
                 "typeHandlerVersion": "1.2",
                 "settings": {
                     "fileUris": [
-                        "[variables('scriptUrl')]"
+                        "[concat(variables('scriptUrl'), 'redis-cluster-install.sh')]",
+                        "[concat(variables('scriptUrl'), 'redis-server-startup.sh')]"
                     ],
                     "commandToExecute": "[concat('bash redis-cluster-install.sh -n ', parameters('redisClusterName'), ' -v ', parameters('redisVersion'))]"
                 }
