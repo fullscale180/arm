@@ -1,9 +1,9 @@
 {
     "dnsNameforLBIP": {
-        "value":"trent2520"
+        "value": "trent2520"
     },
-    "storageAccountName" : {
-        "value":"trentes1"
+    "storageAccountName": {
+        "value": "trentes1"
     },
     "adminUsername": {
         "value": "trent"
