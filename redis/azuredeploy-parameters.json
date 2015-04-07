@@ -1,6 +1,6 @@
 {
     "storageAccountName": {
-        "value": "armdeploy"
+        "value": "armdeploy1"
     },
     "adminUsername": {
         "value": "RedisAdmin"

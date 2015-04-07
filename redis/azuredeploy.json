@@ -3,59 +3,111 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "adminUsername": {
-            "type": "string"
+            "type": "string",
+            "metadata": {
+                "Description": "Administrator user name used when provisioning virtual machines"
+            }
         },
         "adminPassword": {
-            "type": "securestring"
+            "type": "securestring",
+            "metadata": {
+                "Description": "Administrator password used when provisioning virtual machines"
+            }
         },
         "storageAccountName": {
             "type": "string",
-            "defaultValue" : "uniqueStorageAccountName"
+            "defaultValue": "uniqueStorageAccountName",
+            "metadata": {
+                "Description": "Unique namespace for the Storage Account where the Virtual Machine's disks will be placed"
+            }
         },
         "numberOfInstances": {
             "type": "int",
-            "defaultValue": 1
+            "defaultValue": 2,
+            "metadata": {
+                "Description": "The number of Redis nodes (2 is the recommended minimum)"
+            }
         },
         "subscriptionId": {
-            "type": "string"
+            "type": "string",
+            "metadata": {
+                "Description": "Microsoft Azure subscription ID to provision resources to"
+            }
         },
         "region": {
             "type": "string",
-            "defaultValue": "West US"
+            "defaultValue": "West US",
+            "metadata": {
+                "Description": "Location where resources will be provisioned"
+            }
         },
         "virtualNetworkName": {
             "type": "string",
-            "defaultValue": "myVNET"
+            "defaultValue": "myVNET",
+            "metadata": {
+                "Description": "The arbitrary name of the virtual network provisioned for the cluster"
+            }
         },
         "vmSize": {
             "type": "string",
-            "defaultValue": "Standard_A0"
+            "defaultValue": "Standard_A0",
+            "metadata": {
+                "Description": "The virtual machine size of the Redis nodes"
+            }
+        },
+        "dataDiskSize": {
+            "type": "int",
+            "defaultValue": 100,
+            "metadata": {
+                "Description": "Size of each disk attached to Redis nodes (in GB)"
+            }
         },
         "addressPrefix": {
             "type": "string",
-            "defaultValue": "10.0.0.0/16"
+            "defaultValue": "10.0.0.0/16",
+            "metadata": {
+                "Description": "The network address space for the virtual network"
+            }
         },
         "subnet1Name": {
             "type": "string",
-            "defaultValue": "Subnet-1"
+            "defaultValue": "Subnet-1",
+            "metadata": {
+                "Description": "Primary subnet name for the virtual network that resources will be provisioned in to"
+            }
         },
         "subnet2Name": {
             "type": "string",
-            "defaultValue": "Subnet-2"
+            "defaultValue": "Subnet-2",
+            "metadata": {
+                "Description": "Secondary subnet name for the virtual network that resources will be provisioned in to"
+            }
         },
         "subnet1Prefix": {
             "type": "string",
-            "defaultValue": "10.0.0.0/24"
+            "defaultValue": "10.0.0.0/24",
+            "metadata": {
+                "Description": "Address space for the primary subnet"
+            }
         },
         "subnet2Prefix": {
             "type": "string",
-            "defaultValue": "10.0.1.0/24"
+            "defaultValue": "10.0.1.0/24",
+            "metadata": {
+                "Description": "Address space for the secondary subnet"
+            }
         },
-       "redisVersion": {
-            "type": "string"
-       },
+        "redisVersion": {
+            "type": "string",
+            "metadata": {
+                "Description": "The version of the Redis package to be deployed on the cluster"
+            }
+        },
         "redisClusterName": {
-            "type": "string"
+            "type": "string",
+            "metadata": {
+                "Description": "The arbitrary name of the Redis cluster"
+            }
         }
     },
     "variables": {
@@ -64,7 +116,8 @@
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
         "subnet1Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet1Name'))]",
         "sourceImageName": "[concat('/',parameters('subscriptionId'),'/services/images/',variables('vmSourceImageName'))]",
-        "computerNamePrefix":  "redisnode"
+        "computerNamePrefix": "redisnode_",
+        "scriptUrl": "https://fs180.blob.core.windows.net/public/"
     },
     "resources": [
         {
@@ -74,6 +127,14 @@
             "location": "[parameters('region')]",
             "properties": {
                 "accountType": "Standard_LRS"
+            }
+        },
+        {
+            "apiVersion": "2014-12-01-preview",
+            "type": "Microsoft.Compute/availabilitySets",
+            "name": "redisCluserAS",
+            "location": "[parameters('region')]",
+            "properties": {
             }
         },
         {
@@ -157,9 +218,13 @@
             },
             "dependsOn": [
                 "[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]",
-                "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]",
+                "[concat('Microsoft.Compute/availabilitySets/', 'redisCluserAS')]"
             ],
             "properties": {
+                "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', 'redisCluserAS')]"
+                },
                 "hardwareProfile": {
                     "vmSize": "[parameters('vmSize')]",
                     "platformGuestAgent": "true"
@@ -173,22 +238,22 @@
                     }
                 },
                 "storageProfile": {
-                "sourceImage": {
-                    "id": "[variables('sourceImageName')]"
-                },
-                "dataDisks" : [
-                    {
-                        "name" : "datadisk1",
-                        "diskSizeGB" : "100",
-                        "lun" : 0,
-                        "vhd":{
-                            "Uri" : "[concat('https://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/','myvm','dataDisk', copyindex() ,'.vhd')]"
+                    "sourceImage": {
+                        "id": "[variables('sourceImageName')]"
+                    },
+                    "dataDisks": [
+                        {
+                            "name": "datadisk1",
+                            "diskSizeGB": "[parameters('dataDiskSize')]",
+                            "lun": 0,
+                            "vhd": {
+                                "Uri": "[concat('https://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/','myvm','dataDisk', copyindex() ,'.vhd')]"
+                            }
                         }
-                    }
-                ],    
+                    ],
 
-                "destinationVhdsContainer" : "[concat('https://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
-            },
+                    "destinationVhdsContainer": "[concat('https://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
+                },
                 "networkProfile": {
                     "networkInterfaces": [
                         {
@@ -226,7 +291,8 @@
                 "typeHandlerVersion": "1.2",
                 "settings": {
                     "fileUris": [
-                        "https://fs180.blob.core.windows.net/public/redis-cluster-install.sh"
+                        "[concat(variables('scriptUrl'), 'redis-cluster-install.sh')]",
+                        "[concat(variables('scriptUrl'), 'redis-server-startup.sh')]"
                     ],
                     "commandToExecute": "[concat('bash redis-cluster-install.sh -n ', parameters('redisClusterName'), ' -v ', parameters('redisVersion'))]"
                 }
