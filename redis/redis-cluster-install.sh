@@ -56,50 +56,61 @@ done
 log "Installing Redis v${VERSION}... "
 
 # Installing build essentials (if missing)
-apt-get install build-essential
+apt-get -y update
+apt-get -y install build-essential
 
 wget http://download.redis.io/releases/redis-$VERSION.tar.gz
 tar xzf redis-$VERSION.tar.gz
 cd redis-$VERSION
 make
 make install prefix=/usr/local/bin/
-cp redis.conf /etc/redis.conf
-cd ..
-rm redis-$VERSION -R
-rm redis-$VERSION.tar.gz
 
 log "Redis package v${VERSION} was downloaded and built locally"
 
 # Configure the general settings
-sed -i "s/^daemonize no$/daemonize yes/g" /etc/redis/redis.conf
-sed -i 's/^logfile ""/logfile \/var\/log\/redis.log/g' /etc/redis/redis.conf
-sed -i "s/^loglevel verbose$/loglevel notice/g" /etc/redis/redis.conf
-sed -i "s/^dir \.\//dir \/var\/lib\/redis\//g" /etc/redis/redis.conf 
+sed -i "s/^daemonize no$/daemonize yes/g" redis.conf
+sed -i 's/^logfile ""/logfile \/var\/log\/redis.log/g' redis.conf
+sed -i "s/^loglevel verbose$/loglevel notice/g" redis.conf
+sed -i "s/^dir \.\//dir \/var\/lib\/redis\//g" redis.conf 
+sed -i "s/\${REDISPORT}.conf/redis.conf/g" utils/redis_init_script 
+sed -i "s/_\${REDISPORT}.pid/.pid/g" utils/redis_init_script 
 
 # Enable the AOF persistence
-sed -i "s/^appendonly no$/appendonly yes/g" /etc/redis/redis.conf
+sed -i "s/^appendonly no$/appendonly yes/g" redis.conf
 
 # Tune the RDB persistence
-sed -i "s/^save.*$/# save/g" /etc/redis/redis.conf
-echo "save 3600 1" >> /etc/redis/redis.conf
+sed -i "s/^save.*$/# save/g" redis.conf
+echo "save 3600 1" >> redis.conf
 
 # Add cluster configuration (expected to be commented out in the default configuration file)
-echo "cluster-enabled yes" >> /etc/redis/redis.conf
-echo "cluster-node-timeout 5000" >> /etc/redis/redis.conf
-echo "cluster-config-file ${CLUSTER_NAME}.conf" >> /etc/redis/redis.conf
+echo "cluster-enabled yes" >> redis.conf
+echo "cluster-node-timeout 5000" >> redis.conf
+echo "cluster-config-file ${CLUSTER_NAME}.conf" >> redis.conf
+
+mkdir /etc/redis
+mkdir /var/redis
+cp redis.conf /etc/redis/redis.conf
+cp utils/redis_init_script /etc/init.d/redis-server
+
+# Clean up after the build
+cd ..
+rm redis-$VERSION -R
+rm redis-$VERSION.tar.gz
 
 log "Redis cluster configuration was applied successfully"
 
 # Create service user and configure for auto-start
 useradd -r -s /bin/false redis
-cp redis-server-startup.sh /etc/init.d/redis-server
 touch /var/run/redis.pid
 chown redis:redis /var/run/redis.pid
 chmod 755 /etc/init.d/redis-server
 
 log "Redis service was created successfully"
 
-# Perform auto-start
+# Initialize and perform auto-start
 update-rc.d redis-server defaults
-
 log "Redis service was configured for auto-start"
+
+# Start the Redis service
+/etc/init.d/redis-server start
+log "Redis service was started successfully"

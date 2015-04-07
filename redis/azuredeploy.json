@@ -291,8 +291,7 @@
                 "typeHandlerVersion": "1.2",
                 "settings": {
                     "fileUris": [
-                        "[concat(variables('scriptUrl'), 'redis-cluster-install.sh')]",
-                        "[concat(variables('scriptUrl'), 'redis-server-startup.sh')]"
+                        "[concat(variables('scriptUrl'), 'redis-cluster-install.sh')]"
                     ],
                     "commandToExecute": "[concat('bash redis-cluster-install.sh -n ', parameters('redisClusterName'), ' -v ', parameters('redisVersion'))]"
                 }
