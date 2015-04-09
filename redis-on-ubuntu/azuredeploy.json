@@ -28,12 +28,6 @@
                 "Description": "The number of Redis nodes (2 is the recommended minimum)"
             }
         },
-        "subscriptionId": {
-            "type": "string",
-            "metadata": {
-                "Description": "Microsoft Azure subscription ID to provision resources to"
-            }
-        },
         "region": {
             "type": "string",
             "defaultValue": "West US",
@@ -59,7 +53,7 @@
             "type": "int",
             "defaultValue": 100,
             "metadata": {
-                "Description": "Size of each disk attached to Redis nodes (in GB)"
+                "Description": "Size of the data disk attached to Redis nodes (in GB)"
             }
         },
         "addressPrefix": {
@@ -69,44 +63,31 @@
                 "Description": "The network address space for the virtual network"
             }
         },
-        "subnet1Name": {
+        "subnetName": {
             "type": "string",
             "defaultValue": "Subnet-1",
             "metadata": {
-                "Description": "Primary subnet name for the virtual network that resources will be provisioned in to"
+                "Description": "Subnet name for the virtual network that resources will be provisioned in to"
             }
         },
-        "subnet2Name": {
-            "type": "string",
-            "defaultValue": "Subnet-2",
-            "metadata": {
-                "Description": "Secondary subnet name for the virtual network that resources will be provisioned in to"
-            }
-        },
-        "subnet1Prefix": {
+        "subnetPrefix": {
             "type": "string",
             "defaultValue": "10.0.0.0/24",
             "metadata": {
-                "Description": "Address space for the primary subnet"
-            }
-        },
-        "subnet2Prefix": {
-            "type": "string",
-            "defaultValue": "10.0.1.0/24",
-            "metadata": {
-                "Description": "Address space for the secondary subnet"
+                "Description": "Address space for the virtual network subnet"
             }
         },
         "redisVersion": {
             "type": "string",
+			"defaultValue": "stable",
             "metadata": {
-                "Description": "The version of the Redis package to be deployed on the cluster"
+                "Description": "The version of the Redis package to be deployed on the cluster (or use 'stable' to pull in the latest and greatest)"
             }
         },
         "redisClusterName": {
             "type": "string",
             "metadata": {
-                "Description": "The arbitrary name of the Redis cluster"
+                "Description": "The arbitrary name of the Redis cluster (maps to cluster's configuration file name)"
             }
         }
     },
@@ -114,10 +95,10 @@
         "vmStorageAccountContainerName": "vhd",
         "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
-        "subnet1Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet1Name'))]",
-        "sourceImageName": "[concat('/',parameters('subscriptionId'),'/services/images/',variables('vmSourceImageName'))]",
+        "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('subnetName'))]",
+        "sourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
         "computerNamePrefix": "redisnode_",
-        "scriptUrl": "https://fs180.blob.core.windows.net/public/"
+        "scriptUrl": "https://raw.githubusercontent.com/azurermtemplates/azurermtemplates/master/redis-on-ubuntu/"
     },
     "resources": [
         {
@@ -150,15 +131,9 @@
                 },
                 "subnets": [
                     {
-                        "name": "[parameters('subnet1Name')]",
+                        "name": "[parameters('subnetName')]",
                         "properties": {
-                            "addressPrefix": "[parameters('subnet1Prefix')]"
-                        }
-                    },
-                    {
-                        "name": "[parameters('subnet2Name')]",
-                        "properties": {
-                            "addressPrefix": "[parameters('subnet2Prefix')]"
+                            "addressPrefix": "[parameters('subnetPrefix')]"
                         }
                     }
                 ]
@@ -200,7 +175,7 @@
                                 "id": "[resourceId('Microsoft.Network/publicIPAddresses',concat('publicIP', copyindex()))]"
                             },
                             "subnet": {
-                                "id": "[variables('subnet1Ref')]"
+                                "id": "[variables('subnetRef')]"
                             }
                         }
                     }
@@ -291,8 +266,7 @@
                 "typeHandlerVersion": "1.2",
                 "settings": {
                     "fileUris": [
-                        "[concat(variables('scriptUrl'), 'redis-cluster-install.sh')]",
-                        "[concat(variables('scriptUrl'), 'redis-server-startup.sh')]"
+                        "[concat(variables('scriptUrl'), 'redis-cluster-install.sh')]"
                     ],
                     "commandToExecute": "[concat('bash redis-cluster-install.sh -n ', parameters('redisClusterName'), ' -v ', parameters('redisVersion'))]"
                 }
