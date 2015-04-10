@@ -5,6 +5,7 @@
 </a>
 
 This template deploys a Redis cluster on the Ubuntu virtual machines. This template also provisions a storage account, virtual network, availability sets, public IP addresses and network interfaces required by the installation.
+The template also creates 1 publicly accessible VM acting as a "jumpbox" and allowing to ssh into the Redis nodes for diagnostics or troubleshooting purposes.
 
 The example expects the following parameters:
 
@@ -24,6 +25,7 @@ The example expects the following parameters:
 | redisVersion | Redis version number to be installed |
 | redisClusterName | Name of the Redis cluster |
 | redisNodeIPAddressPrefix | The IP address prefix that will be used for constructing a static private IP address for each node in the cluster |
+| jumpbox | The flag allowing to enable or disable provisioning of the jumpbox VM that can be used to access the Redis nodes |
 
 Topology
 --------
@@ -31,6 +33,8 @@ Topology
 The deployment topology is comprised of _numberOfInstances_ nodes running in the cluster mode.
 The AOF persistence is enabled by default, whereas the RDB persistence is tuned to perform less-frequent dumps (once every 60 minutes).
 In addition, some critical memory- and network-specific optimizations are applied to ensure the optimal performance and throughput.
+
+NOTE: To access the individual Redis nodes, you need to use the publicly accessible jumpbox VM and ssh from it into the VM instances running Redis.
 
 ##Known Issues and Limitations
 - The deployment script is not yet idempotent and cannot handle updates (it currently works for initial cluster provisioning only)
