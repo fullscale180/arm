@@ -79,7 +79,7 @@
         },
         "redisVersion": {
             "type": "string",
-            "defaultValue": "stable",
+			"defaultValue": "stable",
             "metadata": {
                 "Description": "The version of the Redis package to be deployed on the cluster (or use 'stable' to pull in the latest and greatest)"
             }
@@ -88,13 +88,6 @@
             "type": "string",
             "metadata": {
                 "Description": "The arbitrary name of the Redis cluster (maps to cluster's configuration file name)"
-            }
-        },
-        "redisNodeIPAddressPrefix": {
-            "type": "string",
-            "defaultValue": "10.0.0.1",
-            "metadata": {
-                "Description": "The IP address prefix that will be used for constructing a static private IP address for each node in the cluster"
             }
         }
     },
@@ -105,8 +98,7 @@
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('subnetName'))]",
         "sourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
         "computerNamePrefix": "redisnode_",
-        //"scriptUrl": "https://raw.githubusercontent.com/azurermtemplates/azurermtemplates/master/redis-on-ubuntu/"
-        "scriptUrl": "https://fs180.blob.core.windows.net/public/"
+        "scriptUrl": "https://raw.githubusercontent.com/azurermtemplates/azurermtemplates/master/redis-on-ubuntu/"
     },
     "resources": [
         {
@@ -178,9 +170,7 @@
                     {
                         "name": "ipconfig1",
                         "properties": {
-                            // Change to Dynamic when the startIndex() function becomes available
-                            "privateIPAllocationMethod": "Static",
-                            "privateIPAddress": "[concat(parameters('redisNodeIPAddressPrefix'), copyindex())]",
+                            "privateIPAllocationMethod": "Dynamic",
                             "publicIPAddress": {
                                 "id": "[resourceId('Microsoft.Network/publicIPAddresses',concat('publicIP', copyindex()))]"
                             },
@@ -278,7 +268,7 @@
                     "fileUris": [
                         "[concat(variables('scriptUrl'), 'redis-cluster-install.sh')]"
                     ],
-                    "commandToExecute": "[concat('bash redis-cluster-install.sh -n ', parameters('redisClusterName'), ' -v ', parameters('redisVersion'), ' -c ', parameters('numberOfInstances'), ' -p ', parameters('redisNodeIPAddressPrefix'))]"
+                    "commandToExecute": "[concat('bash redis-cluster-install.sh -n ', parameters('redisClusterName'), ' -v ', parameters('redisVersion'))]"
                 }
             }
         }
