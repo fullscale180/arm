@@ -317,7 +317,7 @@
             "apiVersion": "2014-12-01-preview",
             "location": "[parameters('region')]",
             "dependsOn": [
-                "Microsoft.Compute/virtualMachines/extensions/myvm0/installredis"
+                "Microsoft.Compute/virtualMachines/myvm0/extensions/installredis"
             ],
             "properties": {
                 "publisher": "Microsoft.OSTCExtensions",
@@ -327,7 +327,7 @@
                     "fileUris": [
                         "[concat(variables('scriptUrl'), 'redis-cluster-install.sh')]"
                     ],
-                    "commandToExecute": "[concat('bash redis-cluster-install.sh -c CLUSTER_SETUP  -c ', variables('numberOfInstances'), ' -p ', parameters('redisNodeIPAddressPrefix'))]"
+                    "commandToExecute": "[concat('bash redis-cluster-install.sh -c CLUSTER_SETUP  -i ', variables('numberOfInstances'), ' -p ', parameters('redisNodeIPAddressPrefix'))]"
                 }
             }
         }
