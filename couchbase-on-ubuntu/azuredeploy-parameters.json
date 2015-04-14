@@ -19,14 +19,5 @@
     },
     "cbClusterName": {
         "value": "couchbase-fullscale"
-    },
-    "vmSizeNodes": {
-        "value": "Standard_A2"
-    },
-    "couchNodes": {
-        "value": 2
-    },
-    "creationDateFormatted" : {
-        "value": ""
     }
 }
