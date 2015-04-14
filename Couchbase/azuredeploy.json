@@ -284,7 +284,7 @@
                 }
             }],
             "backendAddressPools": [{
-                "name": "couchbaseClusterBackendPool",
+                "name": "backendPool",
                 "properties": {
                     "backendIPConfigurations": [{
                         "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', 'nic0'),'/ipConfigurations/ipconfig1')]"
@@ -297,7 +297,7 @@
                 "name": "ssh1",
                 "properties": {
                     "frontendIPConfigurations": [{
-                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer'),'/frontendIPConfigurations/couchbaseClusterBackendPool')]"
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
                     }],
                     "backendIPConfiguration": {
                         "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', 'nic0'),'/ipConfigurations/ipconfig1')]"
@@ -311,7 +311,7 @@
                 "name": "ssh2",
                 "properties": {
                     "frontendIPConfigurations": [{
-                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer'),'/frontendIPConfigurations/couchbaseClusterBackendPool')]"
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
                     }],
                     "backendIPConfiguration": {
                         "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', 'nic1'),'/ipConfigurations/ipconfig1')]"
@@ -329,7 +329,7 @@
                             "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
                         }],
                         "backendAddressPool": {
-                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/couchbaseClusterBackendPool')]"
+                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/backendPool')]"
                         },
                         "protocol": "tcp",
                         "frontendPort": 8091,
@@ -344,7 +344,7 @@
                             "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
                         }],
                         "backendAddressPool": {
-                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/couchbaseClusterBackendPool')]"
+                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/backendPool')]"
                         },
                         "protocol": "tcp",
                         "frontendPort": 8092,
@@ -359,7 +359,7 @@
                             "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
                         }],
                         "backendAddressPool": {
-                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/couchbaseClusterBackendPool')]"
+                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/backendPool')]"
                         },
                         "protocol": "tcp",
                         "frontendPort": 11207,
@@ -374,7 +374,7 @@
                             "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
                         }],
                         "backendAddressPool": {
-                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/couchbaseClusterBackendPool')]"
+                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/backendPool')]"
                         },
                         "protocol": "tcp",
                         "frontendPort": 11210,
@@ -389,7 +389,7 @@
                             "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
                         }],
                         "backendAddressPool": {
-                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/couchbaseClusterBackendPool')]"
+                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/backendPool')]"
                         },
                         "protocol": "tcp",
                         "frontendPort": 11211,
@@ -404,7 +404,7 @@
                             "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
                         }],
                         "backendAddressPool": {
-                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/couchbaseClusterBackendPool')]"
+                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/backendPool')]"
                         },
                         "protocol": "tcp",
                         "frontendPort": 18091,

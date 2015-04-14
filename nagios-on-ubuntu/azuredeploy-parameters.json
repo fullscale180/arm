@@ -1,0 +1,29 @@
+{
+    "storageAccountName": {
+        "value": "armdeploy3"
+    },
+    "adminUsername": {
+        "value": "NagiosAdmin"
+    },
+    "adminPassword": {
+        "value": "J5zA3Fgxh8CrR9CcUHjNvGJ8A6xPPrxu"
+    },
+    "region": {
+        "value": "West US"
+    },
+    "virtualNetworkName": {
+        "value": "nagiosClustVnet"
+    },
+    "vmSize": {
+        "value": "Standard_A1"
+    },
+    "subnetName": {
+        "value": "Subnet1"
+    },
+    "addressPrefix": {
+        "value": "10.0.0.0/16"
+    },
+    "subnetPrefix": {
+        "value": "10.0.0.0/24"
+    }
+}
