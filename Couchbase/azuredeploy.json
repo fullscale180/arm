@@ -21,12 +21,6 @@
                 "Description": "Storage account name"
             }
         },
-        "subscriptionId": {
-            "type": "string",
-            "metadata": {
-                "Description": "Microsoft Azure SubscriptionId to provision resources to"
-            }
-        },
         "targetRegion": {
             "type": "string",
             "defaultValue": "West US",
@@ -125,7 +119,7 @@
         "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('subnetName'))]",
-        "sourceImageName": "[concat('/',parameters('subscriptionId'),'/services/images/',variables('vmSourceImageName'))]",
+        "sourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
         "numberOfNodes": "3",
         "vmNameBase": "cbNode"
     },
@@ -252,7 +246,8 @@
             "count": "[parameters('couchNodes')]"
         },
         "dependsOn": [
-            "[concat('Microsoft.Compute/virtualMachines/', variables('vmNameBase'), copyindex())]"
+            "[concat('Microsoft.Compute/virtualMachines/', variables('vmNameBase'), copyindex())]",
+            "[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]"
         ],
         "properties": {
             "publisher": "Microsoft.OSTCExtensions",
@@ -260,7 +255,7 @@
             "typeHandlerVersion": "1.2",
             "settings": {
                 "fileUris": [
-                    "https://fs180.blob.core.windows.net/public/couchbase-azure-install.sh"
+                    "https://fs180.blob.core.windows.net/public/elasticsearch-azure-install.sh"
                 ],
                 "commandToExecute": "[concat('bash couchbase-azure-install.sh -zn ', parameters('cbClusterName'))]"
             }

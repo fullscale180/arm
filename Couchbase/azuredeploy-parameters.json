@@ -6,13 +6,10 @@
         "value": "P@ssword1"
     },
     "dnsNameforLBIP": {
-        "value":"trent2520"
+        "value":"erccb"
     },
     "storageAccountName" : {
         "value":"fs180armdply1"
-    },
-    "subscriptionId": {
-        "value": "b4249f2a-2378-4c3e-8e5a-214140d7f1c0"
     },
     "targetRegion": {
         "value": "West US"
