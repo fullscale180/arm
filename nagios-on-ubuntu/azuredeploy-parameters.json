@@ -1,24 +1,21 @@
 {
     "storageAccountName": {
-        "value": "armdeploy1"
+        "value": "armdeploy3"
     },
     "adminUsername": {
-        "value": "RedisAdmin"
+        "value": "NagiosAdmin"
     },
     "adminPassword": {
         "value": "J5zA3Fgxh8CrR9CcUHjNvGJ8A6xPPrxu"
-    },
-    "numberOfInstances": {
-        "value": 2
     },
     "region": {
         "value": "West US"
     },
     "virtualNetworkName": {
-        "value": "redisClustVnet"
+        "value": "nagiosClustVnet"
     },
     "vmSize": {
-        "value": "Standard_A0"
+        "value": "Standard_A1"
     },
     "subnetName": {
         "value": "Subnet1"
@@ -28,11 +25,5 @@
     },
     "subnetPrefix": {
         "value": "10.0.0.0/24"
-    },
-    "redisVersion": {
-        "value": "3.0.0"
-    },
-    "redisClusterName": {
-        "value": "redis-arm-cluster"
     }
 }
