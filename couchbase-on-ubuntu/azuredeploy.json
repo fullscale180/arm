@@ -1,0 +1,449 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "adminUsername": {
+            "type": "string",
+            "metadata": {
+                "Description": "Admin username used when provisioning virtual machines"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "Description": "Admin password used when provisioning virtual machines"
+            }
+        },
+        "storageAccountName": {
+            "type": "string",
+            "defaultValue": "cbdeploy",
+            "metadata": {
+                "Description": "Storage account name"
+            }
+        },
+        "targetRegion": {
+            "type": "string",
+            "defaultValue": "West US",
+            "metadata": {
+                "Description": "Location where resources will be provisioned"
+            }
+        },
+        "virtualNetworkName": {
+            "type": "string",
+            "defaultValue": "couchVnet",
+            "metadata": {
+                "Description": "Virtual Network"
+            }
+        },
+        "cbClusterName": {
+            "type": "string",
+            "defaultValue": "couchbasecluster",
+            "metadata": {
+                "Description": "The name of the Couchbase cluster"
+            }
+        },
+        "tshirtSize": {
+            "type": "string",
+            "defaultValue": "S",
+            "allowedValues": [
+                "S",
+                "M",
+                "L"
+            ],
+            "metadata": {
+                "Description": "T-shirt size of the Couchbase cluster"
+            }
+        },
+        "dnsNameforLBIP": {
+            "type": "string",
+            "defaultValue": "fs180cbsample",
+            "metadata": {
+                "Description": "Load balancer subdomain name: for example (<subdomain>.westus.cloudapp.azure.com)"
+            }
+        },
+        "vmNamePrefix": {
+          "type": "string",
+                "defaultValue": "cbnode",
+                "metadata": {
+                    "Description": "Prefx for VM names on the cluster"
+                }
+            },
+        "cbVersion": {
+            "type": "string",
+            "defaultValue": "3.0.3",
+            "allowedValues": ["3.0.3"],
+            "metadata": {
+                "Description": "Couchbase version to install"
+            }
+        },
+        "jumpbox": {
+            "type": "string",
+            "defaultValue": "enabled",
+            "allowedValues": [
+                "enabled",
+                "disabled"
+            ],
+            "metadata": {
+                "Description": "The flag allowing to enable or disable provisioning of the jumpbox VM that can be used to access the nodes"
+            }
+        },
+        "gituser": "fullscale180",
+        "gitrepo": "arm",
+        "gitrepodir": "couchbase-on-ubuntu"
+    },
+    "variables": {
+        "cbClusterAvailabilitySetName": "cbClusterAvailabilitySet",
+        "vmStorageAccountContainerName": "vhd",
+        "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
+        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
+        "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('subnetName'))]",
+        "sourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
+        "dataDiskSize": "1023",
+        "networkSettings": {
+            "virtualNetworkName": "[parameters('virtualNetworkName')]",
+            "addressPrefix": "10.0.0.0/16",
+            "subnet": {
+                "couchbaseSubnet": {
+                    "name": "couchbaseSubnet",
+                    "prefix": "10.0.0.0/24",
+                    "vnet": "[parameters('virtualNetworkName')]"
+                }
+            },
+            "tshirtSizeS": {
+                "numberOfInstances": 3,
+                "vmSize": "Standard_A2",
+                "dataDisksCount": 4
+            },
+            "tshirtSizeM": {
+                "numberOfInstances": 4,
+                "vmSize": "Standard_A6",
+                "dataDisksCount": 8
+            },
+            "tshirtSizeL": {
+                "numberOfInstances": 5,
+                "vmSize": "Standard_D14",
+                "dataDisksCount": 32
+            },
+            "numberOfInstances": "[variables(concat('tshirtSize', parameters('tshirtSize'))).numberOfInstances]",
+            "vmSize": "[variables(concat('tshirtSize', parameters('tshirtSize'))).vmSize]",
+            "jumpboxTemplateName": "jumpbox-resources-",
+            "baseUrl": "[concat('https://raw.githubusercontent.com/', parameters('gituser'), '/', parameters('gitrepo'), '/master', parameters('gitrepodir'), '/')]"
+        },
+        "resources": [{
+                "name": "shared",
+                "type": "Microsoft.Resources/deployments",
+                "apiVersion": "2015-01-01",
+                "properties": {
+                    "mode": "Incremental",
+                    "templateLink": {
+                        "uri": "[concat(variables('baseUrl'), 'shared-resources.json')]",
+                        "contentVersion": "1.0.0.0"
+                    },
+                    "parameters": {
+                        "targetRegion": {
+                            "value": "[parameters('targetRegion')]"
+                        },
+                        "networkSettings": {
+                            "value": "[variables('networkSettings')]"
+                        },
+                        "cbClusterAvailabilitySetName": {
+                            "value": "[variables('cbClusterAvailabilitySetName')]"
+                        },
+                        "storageAccountName": {
+                            "value": "[parameters('storageAccountName')]"
+                        }
+                    }
+                }
+            },
+
+            {
+                "type": "Microsoft.Storage/storageAccounts",
+                "name": "[parameters('storageAccountName')]",
+                "apiVersion": "2014-12-01-preview",
+                "location": "[parameters('targetRegion')]",
+                "properties": {
+                    "accountType": "Standard_LRS"
+                }
+            }, {
+                "type": "Microsoft.Compute/availabilitySets",
+                "name": "couchbaseNodes",
+                "apiVersion": "2014-12-01-preview",
+                "location": "[parameters('targetRegion')]",
+                "properties": {}
+            }, {
+                "type": "Microsoft.Network/virtualNetworks",
+                "name": "[parameters('virtualNetworkName')]",
+                "apiVersion": "2014-12-01-preview",
+                "location": "[parameters('targetRegion')]",
+                "properties": {
+                    "addressSpace": {
+                        "addressPrefixes": [
+                            "[parameters('vnetAddressSpace')]"
+                        ]
+                    },
+                    "subnets": [{
+                        "name": "[parameters('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('subnetAddressSpace')]"
+                        }
+                    }]
+                }
+            }, {
+                "type": "Microsoft.Network/publicIPAddresses",
+                "name": "publicIp",
+                "apiVersion": "2014-12-01-preview",
+                "location": "[parameters('targetRegion')]",
+                "properties": {
+                    "publicIPAllocationMethod": "Dynamic",
+                    "dnsSettings": {
+                        "domainNameLabel": "[parameters('dnsNameforLBIP')]"
+                    }
+                }
+            }, {
+                "type": "Microsoft.Network/networkInterfaces",
+                "name": "[concat('nic', copyindex())]",
+                "apiVersion": "2014-12-01-preview",
+                "location": "[parameters('targetRegion')]",
+                "copy": {
+                    "name": "nicLoop",
+                    "count": "[parameters('couchNodes')]"
+                },
+                "dependsOn": [
+                    "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]"
+                ],
+                "properties": {
+                    "ipConfigurations": [{
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            }
+                        }
+                    }]
+                }
+            }, {
+                "type": "Microsoft.Compute/virtualMachines",
+                "name": "[concat(variables('vmNameBase'), copyindex())]",
+                "apiVersion": "2014-12-01-preview",
+                "location": "[parameters('targetRegion')]",
+                "copy": {
+                    "name": "virtualMachineLoop",
+                    "count": "[parameters('couchNodes')]"
+                },
+                "dependsOn": [
+                    "[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]",
+                    "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]",
+                    "[concat('Microsoft.Compute/availabilitySets/', 'couchbaseNodes')]",
+                    "[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]"
+                ],
+                "properties": {
+                    "availabilitySet": {
+                        "id": "[resourceId('Microsoft.Compute/availabilitySets', 'couchbaseNodes')]"
+                    },
+                    "hardwareProfile": {
+                        "vmSize": "[parameters('vmSizeNodes')]"
+                    },
+                    "osProfile": {
+                        "computerName": "[concat(variables('vmNameBase'), copyIndex())]",
+                        "adminUsername": "[parameters('adminUsername')]",
+                        "adminPassword": "[parameters('adminPassword')]"
+                    },
+                    "storageProfile": {
+                        "sourceImage": {
+                            "id": "[variables('sourceImageName')]"
+                        },
+                        "destinationVhdsContainer": "[concat('http://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]",
+                        "dataDisks": [{
+                            "name": "datadisk",
+                            "diskSizeGB": "[parameters('dataDiskSize')]",
+                            "lun": 0,
+                            "vhd": {
+                                "Uri": "[concat('http://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', variables('vmNameBase'), copyindex(),'dataDisk1' ,'.vhd')]"
+                            }
+                        }]
+                    },
+                    "networkProfile": {
+                        "networkInterfaces": [{
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces',concat('nic', copyindex()))]"
+                        }]
+                    }
+                }
+            }, {
+                "type": "Microsoft.Compute/virtualMachines/extensions",
+                "name": "[concat(variables('vmNameBase'), copyindex(), '/installcouchbase')]",
+                "apiVersion": "2014-12-01-preview",
+                "location": "[parameters('targetRegion')]",
+                "copy": {
+                    "name": "virtualMachineExtensionsLoop",
+                    "count": "[parameters('couchNodes')]"
+                },
+                "dependsOn": [
+                    "[concat('Microsoft.Compute/virtualMachines/', variables('vmNameBase'), copyindex())]",
+                    "[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]"
+                ],
+                "properties": {
+                    "publisher": "Microsoft.OSTCExtensions",
+                    "type": "CustomScriptForLinux",
+                    "typeHandlerVersion": "1.2",
+                    "settings": {
+                        "fileUris": [
+                            "https://fs180.blob.core.windows.net/public/couchbase-azure-install.sh"
+                        ],
+                        "commandToExecute": "[concat('bash couchbase-azure-install.sh -zn ', parameters('cbClusterName'))]"
+                    }
+                }
+            }, {
+                "apiVersion": "2014-12-01-preview",
+                "name": "loadBalancer",
+                "type": "Microsoft.Network/loadBalancers",
+                "location": "[parameters('targetRegion')]",
+                "dependsOn": [
+                    "[concat('Microsoft.Compute/virtualMachines/', concat(variables('vmNameBase'), 0))]",
+                    "[concat('Microsoft.Network/publicIPAddresses/', 'publicIp')]"
+                ],
+                "properties": {
+                    "frontendIPConfigurations": [{
+                        "name": "couchbaseClusterPublicIp",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses','publicIp')]"
+                            }
+                        }
+                    }],
+                    "backendAddressPools": [{
+                        "name": "backendPool",
+                        "properties": {
+                            "backendIPConfigurations": [{
+                                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', 'nic0'),'/ipConfigurations/ipconfig1')]"
+                            }, {
+                                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', 'nic1'),'/ipConfigurations/ipconfig1')]"
+                            }]
+                        }
+                    }],
+                    "inboundNatRules": [{
+                        "name": "ssh1",
+                        "properties": {
+                            "frontendIPConfigurations": [{
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
+                            }],
+                            "backendIPConfiguration": {
+                                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', 'nic0'),'/ipConfigurations/ipconfig1')]"
+                            },
+                            "protocol": "tcp",
+                            "frontendPort": 22,
+                            "backendPort": 22,
+                            "enableFloatingIP": false
+                        }
+                    }, {
+                        "name": "ssh2",
+                        "properties": {
+                            "frontendIPConfigurations": [{
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
+                            }],
+                            "backendIPConfiguration": {
+                                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', 'nic1'),'/ipConfigurations/ipconfig1')]"
+                            },
+                            "protocol": "tcp",
+                            "frontendPort": 22322,
+                            "backendPort": 22,
+                            "enableFloatingIP": false
+                        }
+                    }],
+                    "loadBalancingRules": [{
+                            "name": "webAdminPort",
+                            "properties": {
+                                "frontendIPConfigurations": [{
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
+                                }],
+                                "backendAddressPool": {
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/backendPool')]"
+                                },
+                                "protocol": "tcp",
+                                "frontendPort": 8091,
+                                "backendPort": 8091,
+                                "enableFloatingIP": false,
+                                "idleTimeoutInMinutes": 5
+                            }
+                        }, {
+                            "name": "couchbaseApiPort",
+                            "properties": {
+                                "frontendIPConfigurations": [{
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
+                                }],
+                                "backendAddressPool": {
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/backendPool')]"
+                                },
+                                "protocol": "tcp",
+                                "frontendPort": 8092,
+                                "backendPort": 8092,
+                                "enableFloatingIP": false,
+                                "idleTimeoutInMinutes": 5
+                            }
+                        }, {
+                            "name": "intExtSSLBucketPort",
+                            "properties": {
+                                "frontendIPConfigurations": [{
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
+                                }],
+                                "backendAddressPool": {
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/backendPool')]"
+                                },
+                                "protocol": "tcp",
+                                "frontendPort": 11207,
+                                "backendPort": 11207,
+                                "enableFloatingIP": false,
+                                "idleTimeoutInMinutes": 5
+                            }
+                        }, {
+                            "name": "intExtBucketPort",
+                            "properties": {
+                                "frontendIPConfigurations": [{
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
+                                }],
+                                "backendAddressPool": {
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/backendPool')]"
+                                },
+                                "protocol": "tcp",
+                                "frontendPort": 11210,
+                                "backendPort": 11210,
+                                "enableFloatingIP": false,
+                                "idleTimeoutInMinutes": 5
+                            }
+                        }, {
+                            "name": "clientInterfaceProxy",
+                            "properties": {
+                                "frontendIPConfigurations": [{
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
+                                }],
+                                "backendAddressPool": {
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/backendPool')]"
+                                },
+                                "protocol": "tcp",
+                                "frontendPort": 11211,
+                                "backendPort": 11211,
+                                "enableFloatingIP": false,
+                                "idleTimeoutInMinutes": 5
+                            }
+                        }, {
+                            "name": "internalRestHTTPS",
+                            "properties": {
+                                "frontendIPConfigurations": [{
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/frontendIPConfigurations/couchbaseClusterPublicIp')]"
+                                }],
+                                "backendAddressPool": {
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/backendPool')]"
+                                },
+                                "protocol": "tcp",
+                                "frontendPort": 18091,
+                                "backendPort": 18091,
+                                "enableFloatingIP": false,
+                                "idleTimeoutInMinutes": 5
+                            }
+                        }
+
+                    ]
+                }
+            }
+        ]
+    }
