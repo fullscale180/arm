@@ -212,7 +212,7 @@
                 "vmSize": "[parameters('vmSizeNodes')]"
             },
             "osProfile": {
-                "computername": "[concat('esData', copyIndex())]",
+                "computername": "[concat(variables('vmNameBase'), copyIndex())]",
                 "adminUsername": "[parameters('adminUsername')]",
                 "adminPassword": "[parameters('adminPassword')]"
             },
