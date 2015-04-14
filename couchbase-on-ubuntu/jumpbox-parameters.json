@@ -1,0 +1,24 @@
+{
+    "adminUsername": {
+        "value": "couchadmin"
+    },
+    "adminPassword": {
+        "value": "P@ssword1"
+    },
+    "storageAccountName" : {
+        "value":"fs180armdply1"
+    },
+    "targetRegion": {
+        "value": "West US"
+    },
+    "virtualNetworkName": {
+        "value": "couchVnet"
+    },
+    "computerNamePrefix": {
+        "value": "couch"
+    },
+    "subnetName": {
+        "value": "couchSubnet"
+           
+    }
+}
