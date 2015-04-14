@@ -255,7 +255,7 @@
             "typeHandlerVersion": "1.2",
             "settings": {
                 "fileUris": [
-                    "https://fs180.blob.core.windows.net/public/elasticsearch-azure-install.sh"
+                    "https://fs180.blob.core.windows.net/public/couchbase-azure-install.sh"
                 ],
                 "commandToExecute": "[concat('bash couchbase-azure-install.sh -zn ', parameters('cbClusterName'))]"
             }
