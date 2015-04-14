@@ -193,7 +193,7 @@
                     "value": "[parameters('virtualNetworkName')]"
                 },
                 "subnetName": {
-                    "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
+                    "value": "[variables('networkSettings').subnet.couchbaseSubnet.name]"
                 },
                 "storageAccountName": {
                     "value": "[parameters('storageAccountName')]"
