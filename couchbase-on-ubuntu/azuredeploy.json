@@ -145,7 +145,7 @@
         "numberOfInstances": "[variables(concat('tshirtSize', parameters('tshirtSize'))).numberOfInstances]",
         "vmSize": "[variables(concat('tshirtSize', parameters('tshirtSize'))).vmSize]",
         "jumpboxTemplateName": "jumpbox-resources-",
-        "baseUrl": "[concat('https://raw.githubusercontent.com/', parameters('gituser'), '/', parameters('gitrepo'), '/master', parameters('gitrepodir'), '/')]"
+        "baseUrl": "[concat('https://raw.githubusercontent.com/', parameters('gituser'), '/', parameters('gitrepo'), '/master/', parameters('gitrepodir'), '/')]"
     },
     "resources": [{
         "name": "shared",
@@ -172,5 +172,10 @@
                 }
             }
         }
-    }]
+    }],
+    "outputs": {
+         "uri": {
+            "value": "[concat(variables('baseUrl'), 'shared-resources.json')]",
+            "type": "string"}
+    }
 }
