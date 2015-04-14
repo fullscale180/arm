@@ -148,7 +148,7 @@
         "baseUrl": "[concat('https://raw.githubusercontent.com/', parameters('gituser'), '/', parameters('gitrepo'), '/master/', parameters('gitrepodir'), '/')]"
     },
     "resources": [{
-        "name": "shared",
+        "name": "shared-resources",
         "type": "Microsoft.Resources/deployments",
         "apiVersion": "2015-01-01",
         "properties": {
@@ -172,10 +172,42 @@
                 }
             }
         }
-    }],
-    "outputs": {
-         "uri": {
-            "value": "[concat(variables('baseUrl'), 'shared-resources.json')]",
-            "type": "string"}
-    }
+    }, {
+        "name": "jumpbox-resources",
+        "type": "Microsoft.Resources/deployments",
+        "apiVersion": "2015-01-01",
+        "dependsOn": [
+            "[concat('Microsoft.Resources/deployments/', 'shared-resources')]"
+        ],
+        "properties": {
+            "mode": "Incremental",
+            "templateLink": {
+                "uri": "[concat(variables('baseUrl'), variables('jumpboxTemplateName'), parameters('jumpbox'), '.json')]",
+                "contentVersion": "1.0.0.0"
+            },
+            "parameters": {
+                "targetRegion": {
+                    "value": "[parameters('targetRegion')]"
+                },
+                "virtualNetworkName": {
+                    "value": "[parameters('virtualNetworkName')]"
+                },
+                "subnetName": {
+                    "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
+                },
+                "storageAccountName": {
+                    "value": "[parameters('storageAccountName')]"
+                },
+                "adminUsername": {
+                    "value": "[parameters('adminUsername')]"
+                },
+                "adminPassword": {
+                    "value": "[parameters('adminPassword')]"
+                },
+                "computerNamePrefix": {
+                    "value": "[parameters('vmNamePrefix')]"
+                }
+            }
+        }
+    }]
 }
