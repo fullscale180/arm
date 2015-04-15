@@ -101,16 +101,16 @@
           "value": "[parameters('subnet')]"
         },
         "availabilitySet": {
-          "value": "[variables('cbClusterAvailabilitySetName')]"
+          "value": "[parameters('cbClusterAvailabilitySetName')]"
         },
         "storageAccountName": {
           "value": "[parameters('storageAccountName')]"
         },
         "sourceImage": {
-          "value": "[variables('sourceImage')]"
+          "value": "[parameters('sourceImage')]"
         },
         "nodeCountPerStorageAccount": {
-          "value": "[variables('nodesPerStorageAccount')]"
+          "value": "[parameters('nodesPerStorageAccount')]"
         }
       }
     }
