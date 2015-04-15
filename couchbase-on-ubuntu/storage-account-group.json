@@ -75,7 +75,7 @@
     "type": "Microsoft.Resources/deployments",
     "apiVersion": "2015-01-01",
     "dependsOn": [
-      "shared-resources"
+      "[concat('Microsoft.Network/virtualNetworks/', parameters('subnet').couchbaseSubnet.vnet)]"
     ],
     "copy": {
       "name": "nodesPerStorageAccountLoop",
@@ -101,7 +101,7 @@
           "value": "[parameters('tshirtSize')]"
         },
         "subnet": {
-          "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
+          "value": "[parameters('subnet')]"
         },
         "availabilitySet": {
           "value": "[variables('cbClusterAvailabilitySetName')]"
