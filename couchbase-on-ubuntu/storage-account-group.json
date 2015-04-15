@@ -1,0 +1,122 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "Description": "Admin username used when provisioning virtual machines"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "Description": "Admin password used when provisioning virtual machines"
+      }
+    },
+    "targetRegion": {
+      "type": "string",
+      "metadata": {
+        "Description": "Location where resources will be provisioned"
+      }
+    },
+    "tshirtSize": {
+      "type": "object",
+      "metadata": {
+        "Description": "Tshirt size abstraction for cluster size"
+      }
+    },
+    "subnet": {
+      "type": "object",
+      "metadata": {
+        "Description": "The name of the subnet to deploy resources into"
+      }
+    },
+    "availabilitySet": {
+      "type": "string",
+      "metadata": {
+        "Description": "The availabilty set to use for the data nodes"
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "Description": "Storage account name for the group"
+      }
+    },
+    "sourceImage": {
+      "type": "string",
+      "metadata": {
+        "Description": "Source image for the VM"
+      }
+    },
+    "nodeCountPerStorageAccount": {
+      "type": "int",
+      "metadata": {
+        "Description": "Number of cluster nodes per storage account. One storage account cannot support more than 40 disks."
+      }
+    },
+    "baseUrl": {
+      "type": "string",
+      "metadata": {
+        "Description": "Base URL of the templates and scripts."
+      }
+    },
+    "cbClusterName": {
+      "type": "string",
+      "metadata": {
+        "Description": "Name for couchbase cluster."
+      }
+    }
+  },
+  "variables": {},
+  "resources": [{
+    "name": "[concat('cluster-node',copyindex())]",
+    "type": "Microsoft.Resources/deployments",
+    "apiVersion": "2015-01-01",
+    "dependsOn": [
+      "[concat('Microsoft.Resources/deployments/', 'shared-resources')]"
+    ],
+    "copy": {
+      "name": "nodesPerStorageAccountLoop",
+      "count": "[variables('nodeCountPerStorageAccount')]"
+    },
+    "properties": {
+      "mode": "Incremental",
+      "templateLink": {
+        "uri": "[concat(parameters('baseUrl'), 'cluster-nodes.json')]",
+        "contentVersion": "1.0.0.0"
+      },
+      "parameters": {
+        "adminUsername": {
+          "value": "[parameters('adminUsername')]"
+        },
+        "adminPassword": {
+          "value": "[parameters('adminPassword')]"
+        },
+        "targetRegion": {
+          "value": "[parameters('targetRegion')]"
+        },
+        "tshirtSize": {
+          "value": "[parameters('tshirtSize')]"
+        },
+        "subnet": {
+          "value": "[variables('networkSettings').subnet.master]"
+        },
+        "availabilitySet": {
+          "value": "[variables('cbClusterAvailabilitySetName')]"
+        },
+        "storageAccountName": {
+          "value": "[parameters('storageAccountName')]"
+        },
+        "sourceImage": {
+          "value": "[variables('sourceImage')]"
+        },
+        "nodeCountPerStorageAccount": {
+          "value": "[variables('nodesPerStorageAccount')]"
+        }
+
+      }
+    }
+  }]
+}

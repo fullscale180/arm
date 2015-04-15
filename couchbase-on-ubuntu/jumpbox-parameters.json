@@ -5,7 +5,7 @@
     "adminPassword": {
         "value": "P@ssword1"
     },
-    "storageAccountName" : {
+    "storageAccountNamePrefix" : {
         "value":"fs180armdply1"
     },
     "targetRegion": {

@@ -23,9 +23,9 @@
                 "Description": "Subnet name for the virtual network that resources will be provisioned in to"
             }
         },
-        "storageAccountName": {
+        "storageAccountNamePrefix": {
             "type": "string",
-            "defaultValue": "uniqueStorageAccountName",
+            "defaultValue": "uniquestorageAccountNamePrefix",
             "metadata": {
                 "Description": "Unique namespace for the Storage Account where the Virtual Machine's disks will be placed"
             }
@@ -57,87 +57,84 @@
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('subnetName'))]",
         "vmSize": "Standard_A0"
     },
-    "resources": [
-        {
-            "apiVersion": "2014-12-01-preview",
-            "type": "Microsoft.Network/publicIPAddresses",
-            "name": "publicIP",
-            "location": "[parameters('targetRegion')]",
-            "properties": {
-                "publicIPAllocationMethod": "Dynamic"
-            }
-        },
-        {
-            "apiVersion": "2014-12-01-preview",
-            "type": "Microsoft.Network/networkInterfaces",
-            "name": "nicJumpbox",
-            "location": "[parameters('targetRegion')]",
-            "dependsOn": [
-                "[concat('Microsoft.Network/publicIPAddresses/', 'publicIP')]"
-            ],
-            "properties": {
-                "ipConfigurations": [
-                    {
-                        "name": "ipconfig1",
-                        "properties": {
-                            "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses','publicIP')]"
-                            },
-                            "subnet": {
-                                "id": "[variables('subnetRef')]"
-                            }
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "apiVersion": "2014-12-01-preview",
-            "type": "Microsoft.Compute/virtualMachines",
-            "name": "jumpbox",
-            "location": "[parameters('targetRegion')]",
-            "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/', 'nicJumpbox')]"
-            ],
-            "properties": {
-                "hardwareProfile": {
-                    "vmSize": "[variables('vmSize')]",
-                    "platformGuestAgent": "true"
-                },
-                "osProfile": {
-                    "computername": "[concat(parameters('computerNamePrefix'), 'jumpbox')]",
-                    "adminUsername": "[parameters('adminUsername')]",
-                    "adminPassword": "[parameters('adminPassword')]",
-                    "linuxOperatingSystemProfile": {
-                        "disableSshPasswordAuthentication": "false"
-                    }
-                },
-                "storageProfile": {
-                    "sourceImage": {
-                        "id": "[variables('sourceImageName')]"
+    "resources": [{
+        "type": "Microsoft.Storage/storageAccounts",
+        "name": "[concat(parameters('storageAccountNamePrefix'), 'jb')]",
+        "apiVersion": "2014-12-01-preview",
+        "location": "[parameters('targetregion')]",
+        "properties": {
+            "accountType": "Standard_LRS"
+        }
+    }, {
+        "apiVersion": "2014-12-01-preview",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "publicIP",
+        "location": "[parameters('targetRegion')]",
+        "properties": {
+            "publicIPAllocationMethod": "Dynamic"
+        }
+    }, {
+        "apiVersion": "2014-12-01-preview",
+        "type": "Microsoft.Network/networkInterfaces",
+        "name": "nicJumpbox",
+        "location": "[parameters('targetRegion')]",
+        "dependsOn": [
+            "[concat('Microsoft.Network/publicIPAddresses/', 'publicIP')]"
+        ],
+        "properties": {
+            "ipConfigurations": [{
+                "name": "ipconfig1",
+                "properties": {
+                    "privateIPAllocationMethod": "Dynamic",
+                    "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses','publicIP')]"
                     },
-                    "destinationVhdsContainer": "[concat('https://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
-                },
-                "networkProfile": {
-                    "networkInterfaces": [
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces','nicJumpbox')]"
-                        }
-                    ],
-                    "inputEndpoints": [
-                        {
-                            "enableDirectServerReturn": "False",
-                            "endpointName": "SSH",
-                            "privatePort": 22,
-                            "publicPort": 22,
-                            "protocol": "tcp"
-                        }
-                    ]
+                    "subnet": {
+                        "id": "[variables('subnetRef')]"
+                    }
                 }
+            }]
+        }
+    }, {
+        "apiVersion": "2014-12-01-preview",
+        "type": "Microsoft.Compute/virtualMachines",
+        "name": "jumpbox",
+        "location": "[parameters('targetRegion')]",
+        "dependsOn": [
+            "[concat('Microsoft.Network/networkInterfaces/', 'nicJumpbox')]"
+        ],
+        "properties": {
+            "hardwareProfile": {
+                "vmSize": "[variables('vmSize')]",
+                "platformGuestAgent": "true"
+            },
+            "osProfile": {
+                "computername": "[concat(parameters('computerNamePrefix'), 'jumpbox')]",
+                "adminUsername": "[parameters('adminUsername')]",
+                "adminPassword": "[parameters('adminPassword')]",
+                "linuxOperatingSystemProfile": {
+                    "disableSshPasswordAuthentication": "false"
+                }
+            },
+            "storageProfile": {
+                "sourceImage": {
+                    "id": "[variables('sourceImageName')]"
+                },
+                "destinationVhdsContainer": "[concat('https://',parameters('storageAccountNamePrefix'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
+            },
+            "networkProfile": {
+                "networkInterfaces": [{
+                    "id": "[resourceId('Microsoft.Network/networkInterfaces','nicJumpbox')]"
+                }],
+                "inputEndpoints": [{
+                    "enableDirectServerReturn": "False",
+                    "endpointName": "SSH",
+                    "privatePort": 22,
+                    "publicPort": 22,
+                    "protocol": "tcp"
+                }]
             }
         }
-    ],
-    "outputs": {
-    }
+    }],
+    "outputs": {}
 }

@@ -8,7 +8,7 @@
     "dnsNameforLBIP": {
         "value":"erccb2"
     },
-    "storageAccountName" : {
+    "storageAccountNamePrefix" : {
         "value":"fs180armdply"
     },
     "targetRegion": {
@@ -18,6 +18,6 @@
         "value": "couchVnet"
     },
     "cbClusterName": {
-        "value": "couchbase-fullscale"
+        "value": "couchbasefs180"
     }
 }
