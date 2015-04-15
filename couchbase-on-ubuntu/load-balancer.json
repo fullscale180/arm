@@ -37,7 +37,7 @@
       "apiVersion": "2014-12-01-preview",
       "name": "loadBalancer",
       "type": "Microsoft.Network/loadBalancers",
-      "location": "[parameters('region')]",
+      "location": "[parameters('targetRegion')]",
       "dependsOn": ["storageAccountGroupLoop"],
       "properties": {
         "frontendIPConfigurations": "[variables('internalFELBConfig')]",
