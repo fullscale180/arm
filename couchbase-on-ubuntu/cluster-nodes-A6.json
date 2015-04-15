@@ -119,7 +119,7 @@
     },
     "dependsOn": [
       "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountName'), 'nic', copyindex())]",
-      "[concat('Microsoft.Storage/storageAccounts/', concat(parameters('storageAccountName'),parameters('storageAccountNamePrefix')))]"
+      "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
     ],
     "properties": {
       "availabilitySet": {
