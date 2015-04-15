@@ -111,6 +111,12 @@
         },
         "nodeCountPerStorageAccount": {
           "value": "[parameters('nodeCountPerStorageAccount')]"
+        },
+         "baseUrl": {
+          "value": "[parameters('baseUrl')]"
+        },
+         "cbClusterName": {
+          "value": "[parameters('cbClusterName')]"
         }
       }
     }
