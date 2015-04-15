@@ -101,7 +101,7 @@
           "value": "[parameters('subnet')]"
         },
         "availabilitySet": {
-          "value": "[parameters('cbClusterAvailabilitySetName')]"
+          "value": "[parameters('availabilitySet')]"
         },
         "storageAccountName": {
           "value": "[parameters('storageAccountName')]"
