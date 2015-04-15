@@ -1,6 +1,6 @@
 {
     "storageAccountName": {
-        "value": "armdeploy3"
+        "value": "armdeploy4"
     },
     "adminUsername": {
         "value": "NagiosAdmin"
@@ -14,9 +14,6 @@
     "virtualNetworkName": {
         "value": "nagiosClustVnet"
     },
-    "vmSize": {
-        "value": "Standard_A1"
-    },
     "subnetName": {
         "value": "Subnet1"
     },
@@ -25,5 +22,11 @@
     },
     "subnetPrefix": {
         "value": "10.0.0.0/24"
+    },
+    "domainName": {
+        "value": "nagiosonazure"
+    },
+    "tshirtSize":  {
+        "value": "Medium"
     }
 }
