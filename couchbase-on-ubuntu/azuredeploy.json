@@ -134,11 +134,6 @@
             "vmsPerStorageAccount": 3,
             "vmSize": "Standard_A2",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 4,
-            "nicDependecies": [
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic0')]",
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic1')]",
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic2')]"
-            ],
             "backendIPConfigurations": [{
                 "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic0')),'/ipConfigurations/ipconfig1')]"
             }, {
@@ -152,12 +147,6 @@
             "vmsPerStorageAccount": 4,
             "vmSize": "Standard_A6",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 8,
-            "nicDependecies": [
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic0')]",
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic1')]",
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic2')]",
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic3')]"
-            ],
             "backendIPConfigurations": [{
                 "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic0')),'/ipConfigurations/ipconfig1')]"
             }, {
@@ -173,13 +162,6 @@
             "vmsPerStorageAccount": 1,
             "vmSize": "Standard_D14",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 32,
-            "nicDependecies": [
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic0')]",
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic1')]",
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic2')]",
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic3')]",
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic4')]"
-            ],
             "backendIPConfigurations": [{
                 "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic0')),'/ipConfigurations/ipconfig1')]"
             }, {
