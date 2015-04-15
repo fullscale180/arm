@@ -21,13 +21,6 @@
 				"Description": "Unique namespace for the Storage Account where the Virtual Machine's disks will be placed"
 			}
 		},
-		"numberOfInstances": {
-			"type": "int",
-			"defaultValue": 1,
-			"metadata": {
-				"Description": "The number of VM instances"
-			}
-		},
 		"region": {
 			"type": "string",
 			"defaultValue": "West US",
@@ -40,20 +33,6 @@
 			"defaultValue": "myVNET",
 			"metadata": {
 				"Description": "The arbitrary name of the virtual network provisioned for the cluster"
-			}
-		},
-		"vmSize": {
-			"type": "string",
-			"defaultValue": "Standard_A1",
-			"metadata": {
-				"Description": "The virtual machine size of the Nagios server"
-			}
-		},
-		"dataDiskSize": {
-			"type": "int",
-			"defaultValue": 1,
-			"metadata": {
-				"Description": "Size of the data disk attached to Nagios server (in GB)"
 			}
 		},
 		"addressPrefix": {
@@ -70,11 +49,31 @@
 				"Description": "Subnet name for the virtual network that resources will be provisioned in to"
 			}
 		},
-		"subnetPrefix": {
+        "subnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/24",
+            "metadata": {
+                "Description": "Address space for the virtual network subnet"
+            }
+        },
+        "domainName": {
+            "type": "string",
+            "metadata": {
+                "Description": "Domain name of the publicly accessible Apache web server hosting Nagios"
+            }
+        },
+		"tshirtSize": {
 			"type": "string",
-			"defaultValue": "10.0.0.0/24",
+			"defaultValue": "Medium",
+			"allowedValues": [
+				"Small",
+				"Medium",
+				"Large",
+				"XLarge",
+				"XXLarge"
+			],
 			"metadata": {
-				"Description": "Address space for the virtual network subnet"
+				"Description": "T-shirt size of the Nagios deployment"
 			}
 		}
 	},
@@ -83,9 +82,31 @@
 		"vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
 		"vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
 		"subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('subnetName'))]",
-        "sourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
-        "computerNamePrefix": "NagiosCoreSrv_",
-		"scriptUrl": "https://fs180.blob.core.windows.net/public/"
+		"sourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
+		"computerNamePrefix": "NagiosCoreSrv_",
+		"scriptUrl": "https://fs180.blob.core.windows.net/public/",
+		"tshirtSizeSmall": {
+			"numberOfInstances": 1,
+			"vmSize": "Standard_A1"
+		},
+		"tshirtSizeMedium": {
+			"numberOfInstances": 1,
+			"vmSize": "Standard_D1"
+		},
+		"tshirtSizeLarge": {
+			"numberOfInstances": 1,
+			"vmSize": "Standard_D2"
+		},
+		"tshirtSizeXLarge": {
+			"numberOfInstances": 1,
+			"vmSize": "Standard_D3"
+		},
+		"tshirtSizeXXLarge": {
+			"numberOfInstances": 1,
+			"vmSize": "Standard_D4"
+		},
+		"numberOfInstances": "[variables(concat('tshirtSize', parameters('tshirtSize'))).numberOfInstances]",
+		"vmSize": "[variables(concat('tshirtSize', parameters('tshirtSize'))).vmSize]"
 	},
 	"resources": [
 		{
@@ -125,10 +146,13 @@
 			"location": "[parameters('region')]",
 			"copy": {
 				"name": "publicIPLoop",
-				"count": "[parameters('numberOfInstances')]"
+				"count": "[variables('numberOfInstances')]"
 			},
 			"properties": {
-				"publicIPAllocationMethod": "Dynamic"
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('domainName')]"
+                }
 			}
 		},
 		{
@@ -138,7 +162,7 @@
 			"location": "[parameters('region')]",
 			"copy": {
 				"name": "nicLoop",
-				"count": "[parameters('numberOfInstances')]"
+				"count": "[variables('numberOfInstances')]"
 			},
 			"dependsOn": [
 				"[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
@@ -164,11 +188,11 @@
 		{
 			"apiVersion": "2014-12-01-preview",
 			"type": "Microsoft.Compute/virtualMachines",
-			"name": "[concat('myvm', copyindex())]",
+			"name": "[concat('nagiosSrv', copyindex())]",
 			"location": "[parameters('region')]",
 			"copy": {
 				"name": "virtualMachineLoop",
-				"count": "[parameters('numberOfInstances')]"
+				"count": "[variables('numberOfInstances')]"
 			},
 			"dependsOn": [
 				"[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]",
@@ -176,7 +200,7 @@
 			],
 			"properties": {
 				"hardwareProfile": {
-					"vmSize": "[parameters('vmSize')]",
+					"vmSize": "[variables('vmSize')]",
 					"platformGuestAgent": "true"
 				},
 				"osProfile": {
@@ -213,15 +237,15 @@
 		},
 		{
 			"type": "Microsoft.Compute/virtualMachines/extensions",
-			"name": "[concat('myvm', copyindex(), '/installnagios')]",
+			"name": "[concat('nagiosSrv', copyindex(), '/installnagios')]",
 			"apiVersion": "2014-12-01-preview",
 			"location": "[parameters('region')]",
 			"copy": {
 				"name": "virtualMachineExtensionsLoop",
-				"count": "[parameters('numberOfInstances')]"
+				"count": "[variables('numberOfInstances')]"
 			},
 			"dependsOn": [
-				"[concat('Microsoft.Compute/virtualMachines/', 'myvm', copyindex())]",
+				"[concat('Microsoft.Compute/virtualMachines/', 'nagiosSrv', copyindex())]",
 				"[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]"
 			],
 			"properties": {
