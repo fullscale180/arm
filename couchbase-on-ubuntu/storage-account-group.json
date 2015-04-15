@@ -110,7 +110,7 @@
           "value": "[parameters('sourceImage')]"
         },
         "nodeCountPerStorageAccount": {
-          "value": "[parameters('nodesPerStorageAccount')]"
+          "value": "[parameters('nodeCountPerStorageAccount')]"
         }
       }
     }
