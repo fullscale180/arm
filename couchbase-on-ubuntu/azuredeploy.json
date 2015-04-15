@@ -114,7 +114,7 @@
         "vmStorageAccountContainerName": "vhd",
         "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
-        "sourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
+        "sourceImage": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
         "dataDiskSize": "1023",
         "networkSettings": {
             "virtualNetworkName": "[parameters('virtualNetworkName')]",
@@ -126,26 +126,10 @@
                     "vnet": "[parameters('virtualNetworkName')]"
                 }
             }
-        },
-        "tshirtSizeS": {
-            "numberOfInstances": 3,
-            "vmSize": "Standard_A2",
-            "dataDisksCount": 4
-        },
-        "tshirtSizeM": {
-            "numberOfInstances": 4,
-            "vmSize": "Standard_A6",
-            "dataDisksCount": 8
-        },
-        "tshirtSizeL": {
-            "numberOfInstances": 5,
-            "vmSize": "Standard_D14",
-            "dataDisksCount": 32
-        },
-        "numberOfInstances": "[variables(concat('tshirtSize', parameters('tshirtSize'))).numberOfInstances]",
-        "vmSize": "[variables(concat('tshirtSize', parameters('tshirtSize'))).vmSize]",
+        },        
         "jumpboxTemplateName": "jumpbox-resources-",
-        "baseUrl": "[concat('https://raw.githubusercontent.com/', parameters('gituser'), '/', parameters('gitrepo'), '/master/', parameters('gitrepodir'), '/')]"
+        "baseUrl": "[concat('https://raw.githubusercontent.com/', parameters('gituser'), '/', parameters('gitrepo'), '/master/', parameters('gitrepodir'), '/')]",
+        "clusterNodeTemplate": "[concat(variables('baseUrl'), variables(concat('clusterNodes', parameters('tshirtSize'))))]"
     },
     "resources": [{
         "name": "shared-resources",
@@ -182,7 +166,7 @@
         "properties": {
             "mode": "Incremental",
             "templateLink": {
-                "uri": "[concat(variables('baseUrl'), variables('jumpboxTemplateName'), parameters('jumpbox'), '.json')]",
+                 "uri": "[concat(variables('baseUrl'), variables('jumpboxTemplateName'), parameters('jumpbox'), '.json')]",
                 "contentVersion": "1.0.0.0"
             },
             "parameters": {
@@ -206,8 +190,50 @@
                 },
                 "computerNamePrefix": {
                     "value": "[parameters('vmNamePrefix')]"
+                },
+                 "tshirtSize": {
+                    "value": "[parameters('tshirtSize')]"
                 }
+                
             }
         }
+    },
+    {
+      "name": "cluster-nodes",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'shared-resources')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('baseUrl'), 'cluster-nodes.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {         
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+            "storageAccountName": {
+            "value": "[parameters('storageAccountName')]"
+          },
+          "targetRegion": {
+            "value": "[parameters('targetRegion')]"
+          },
+          "tshirtSize": {
+            "value": "[parameters('tshirtSize')]"
+          },
+          "subnet": {
+            "value": "[variables('networkSettings').subnet.master]"
+          },
+          "sourceImage": {
+            "value": "[variables('sourceImage')]"
+          }
+        }
+      }
     }]
 }
