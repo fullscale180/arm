@@ -79,7 +79,7 @@
     ],
     "copy": {
       "name": "nodesPerStorageAccountLoop",
-      "count": "[variables('nodeCountPerStorageAccount')]"
+      "count": "[parameters('nodeCountPerStorageAccount')]"
     },
     "properties": {
       "mode": "Incremental",
