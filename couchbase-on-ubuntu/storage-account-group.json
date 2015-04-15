@@ -80,8 +80,16 @@
     "clusterTemplateM": "[concat(parameters('baseUrl'), 'cluster-nodes-A6.json')]",
     "clusterTemplateL": "[concat(parameters('baseUrl'), 'cluster-nodes-D14.json')]",
     "clusterTemplate": "[variables(concat('clusterTemplate', parameters('tshirtSize')))]"
-    },
+  },
   "resources": [{
+    "type": "Microsoft.Storage/storageAccounts",
+    "name": "[parameters('storageAccountName')]",
+    "apiVersion": "2014-12-01-preview",
+    "location": "[parameters('targetRegion')]",
+    "properties": {
+      "accountType": "Standard_LRS"
+    }
+  }, {
     "name": "[concat('cluster-node',copyindex())]",
     "type": "Microsoft.Resources/deployments",
     "apiVersion": "2015-01-01",
@@ -89,6 +97,9 @@
       "name": "nodesPerStorageAccountLoop",
       "count": "[parameters('nodeCountPerStorageAccount')]"
     },
+    "dependsOn": [
+      "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+    ],
     "properties": {
       "mode": "Incremental",
       "templateLink": {
@@ -123,13 +134,13 @@
         "nodeCountPerStorageAccount": {
           "value": "[parameters('nodeCountPerStorageAccount')]"
         },
-         "baseUrl": {
+        "baseUrl": {
           "value": "[parameters('baseUrl')]"
         },
-         "cbClusterName": {
+        "cbClusterName": {
           "value": "[parameters('cbClusterName')]"
         },
-         "vmSize": {
+        "vmSize": {
           "value": "[parameters('vmSize')]"
         }
       }
