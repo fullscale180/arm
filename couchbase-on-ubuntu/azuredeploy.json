@@ -132,7 +132,7 @@
         "storageAccountGroupS": {
             "storageAccountCount": 1,
             "vmsPerStorageAccount": 3,
-            "vmSizeNotUsedButHereAsReference": "Standard_A2",
+            "vmSize": "Standard_A2",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 4,
             "nicDependecies": [
                 "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic0')]",
@@ -150,7 +150,7 @@
         "storageAccountGroupM": {
             "storageAccountCount": 1,
             "vmsPerStorageAccount": 4,
-            "vmSizeNotUsedButHereAsReference": "Standard_A6",
+            "vmSize": "Standard_A6",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 8,
             "nicDependecies": [
                 "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic0')]",
@@ -171,7 +171,7 @@
         "storageAccountGroupL": {
             "storageAccountCount": 5,
             "vmsPerStorageAccount": 1,
-            "vmSizeNotUsedButHereAsReference": "Standard_D14",
+            "vmSize": "Standard_D14",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 32,
             "nicDependecies": [
                 "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountNamePrefix'), '0nic0')]",
@@ -307,6 +307,9 @@
                 },
                 "cbClusterName": {
                     "value": "[parameters('cbClusterName')]"
+                },
+                "vmSize": {
+                    "value": "[variables('storageAccountGroup').vmSize]"
                 }
             }
         }

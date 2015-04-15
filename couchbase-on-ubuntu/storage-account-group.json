@@ -67,9 +67,20 @@
       "metadata": {
         "Description": "Name for couchbase cluster."
       }
+    },
+    "vmSize": {
+      "type": "string",
+      "metadata": {
+        "Description": "Size of the VM"
+      },
     }
   },
-  "variables": {},
+  "variables": {
+    "clusterTemplateS": "[concat(parameters('baseUrl'), 'cluster-nodes-A2.json')]",
+    "clusterTemplateM": "[concat(parameters('baseUrl'), 'cluster-nodes-A6.json')]",
+    "clusterTemplateL": "[concat(parameters('baseUrl'), 'cluster-nodes-D14.json')]",
+    "clusterTemplate": "[variables(concat('clusterTemplate', parameters('tshirtSize')))]"
+    },
   "resources": [{
     "name": "[concat('cluster-node',copyindex())]",
     "type": "Microsoft.Resources/deployments",
@@ -81,7 +92,7 @@
     "properties": {
       "mode": "Incremental",
       "templateLink": {
-        "uri": "[concat(parameters('baseUrl'), 'cluster-nodes.json')]",
+        "uri": "[variables('clusterTemplate')]",
         "contentVersion": "1.0.0.0"
       },
       "parameters": {
