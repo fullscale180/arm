@@ -75,7 +75,7 @@
     "type": "Microsoft.Resources/deployments",
     "apiVersion": "2015-01-01",
     "dependsOn": [
-      "[concat('Microsoft.Network/virtualNetworks/', parameters('subnet').couchbaseSubnet.vnet)]"
+      "[concat('Microsoft.Network/virtualNetworks/', parameters('subnet').vnet)]"
     ],
     "copy": {
       "name": "nodesPerStorageAccountLoop",
