@@ -110,8 +110,7 @@
       "count": "[parameters('nodeCountPerStorageAccount')]"
     },
     "dependsOn": [
-      "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountName'), 'nic', copyindex())]",
-      "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+      "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountName'), 'nic', copyindex())]"
     ],
     "properties": {
       "availabilitySet": {
