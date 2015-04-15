@@ -21,7 +21,7 @@
       }
     },
     "tshirtSize": {
-      "type": "object",
+      "type": "string",
       "metadata": {
         "Description": "Tshirt size abstraction for cluster size"
       }
@@ -101,7 +101,7 @@
           "value": "[parameters('tshirtSize')]"
         },
         "subnet": {
-          "value": "[variables('networkSettings').subnet.master]"
+          "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
         },
         "availabilitySet": {
           "value": "[variables('cbClusterAvailabilitySetName')]"
@@ -115,7 +115,6 @@
         "nodeCountPerStorageAccount": {
           "value": "[variables('nodesPerStorageAccount')]"
         }
-
       }
     }
   }]

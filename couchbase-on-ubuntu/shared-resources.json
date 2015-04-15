@@ -28,34 +28,29 @@
     }
   },
   "variables": {},
-  "resources": [
-    {
-      "apiVersion": "2014-12-01-preview",
-      "type": "Microsoft.Network/virtualNetworks",
-      "name": "[parameters('networkSettings').virtualNetworkName]",
-      "location": "[parameters('targetregion')]",
-      "properties": {
-        "addressSpace": {
-          "addressPrefixes": [
-            "[parameters('networkSettings').addressPrefix]"
-          ]
-        },
-        "subnets": [
-          {
-            "name": "[parameters('networkSettings').subnet.couchbaseSubnet.name]",
-            "properties": {
-              "addressPrefix": "[parameters('networkSettings').subnet.couchbaseSubnet.prefix]"
-            }
-          }
+  "resources": [{
+    "apiVersion": "2014-12-01-preview",
+    "type": "Microsoft.Network/virtualNetworks",
+    "name": "[parameters('networkSettings').virtualNetworkName]",
+    "location": "[parameters('targetregion')]",
+    "properties": {
+      "addressSpace": {
+        "addressPrefixes": [
+          "[parameters('networkSettings').addressPrefix]"
         ]
-      }
-    },
-    {
-      "apiVersion": "2014-12-01-preview",
-      "type": "Microsoft.Compute/availabilitySets",
-      "name": "[parameters('cbClusterAvailabilitySetName')]",
-      "location": "[parameters('targetregion')]",
-      "properties": {}
+      },
+      "subnets": [{
+        "name": "[parameters('networkSettings').subnet.couchbaseSubnet.name]",
+        "properties": {
+          "addressPrefix": "[parameters('networkSettings').subnet.couchbaseSubnet.prefix]"
+        }
+      }]
     }
-  ]
+  }, {
+    "apiVersion": "2014-12-01-preview",
+    "type": "Microsoft.Compute/availabilitySets",
+    "name": "[parameters('cbClusterAvailabilitySetName')]",
+    "location": "[parameters('targetregion')]",
+    "properties": {}
+  }]
 }

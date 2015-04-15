@@ -254,11 +254,7 @@
                 },
                 "computerNamePrefix": {
                     "value": "[parameters('vmNamePrefix')]"
-                },
-                "tshirtSize": {
-                    "value": "[parameters('tshirtSize')]"
                 }
-
             }
         }
     }, {
@@ -292,7 +288,7 @@
                     "value": "[parameters('tshirtSize')]"
                 },
                 "subnet": {
-                    "value": "[variables('networkSettings').subnet.master]"
+                    "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
                 },
                 "availabilitySet": {
                     "value": "[variables('cbClusterAvailabilitySetName')]"
@@ -310,7 +306,7 @@
                     "value": "[variables('baseUrl')]"
                 },
                 "cbClusterName": {
-                    "value": "[variables('cbClusterName')]"
+                    "value": "[parameters('cbClusterName')]"
                 }
             }
         }
@@ -330,7 +326,7 @@
                     "value": "[parameters('targetRegion')]"
                 },
                 "subnet": {
-                    "value": "[variables('networkSettings').subnet.master]"
+                    "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
                 },
                 "internalIp": {
                     "value": "[variables('internalIp')]"

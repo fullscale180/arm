@@ -8,6 +8,9 @@
     "dnsNameforLBIP": {
         "value":"erccb2"
     },
+    "tshirtSize": {
+        "value":"S"
+    },
     "storageAccountNamePrefix" : {
         "value":"fs180armdply"
     },

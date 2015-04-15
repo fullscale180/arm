@@ -21,7 +21,7 @@
       }
     },
     "tshirtSize": {
-      "type": "object",
+      "type": "string",
       "metadata": {
         "Description": "Tshirt size abstraction for cluster size"
       }

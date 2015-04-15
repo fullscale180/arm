@@ -38,7 +38,7 @@
       "name": "loadBalancer",
       "type": "Microsoft.Network/loadBalancers",
       "location": "[parameters('region')]",
-      "dependsOn": "[parameters('storageAccountGroup').nicDependecies]",
+      "dependsOn": ["storageAccountGroupLoop"],
       "properties": {
         "frontendIPConfigurations": "[variables('internalFELBConfig')]",
         "backendAddressPools": [
