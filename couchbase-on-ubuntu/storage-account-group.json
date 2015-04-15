@@ -90,14 +90,10 @@
       "accountType": "Standard_LRS"
     }
   }, {
-    "name": "[concat('cluster-node',copyindex())]",
+    "name": "cluster-node",
     "type": "Microsoft.Resources/deployments",
     "apiVersion": "2015-01-01",
-    "copy": {
-      "name": "nodesPerStorageAccountLoop",
-      "count": "[parameters('nodeCountPerStorageAccount')]"
-    },
-    "dependsOn": [
+        "dependsOn": [
       "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
     ],
     "properties": {
