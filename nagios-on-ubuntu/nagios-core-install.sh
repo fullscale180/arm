@@ -41,7 +41,7 @@ while getopts :u:p:v:h optname; do
   
   case $optname in
 	u) # Admin user name
-		#ADMIN_USERNAME=${OPTARG}
+		ADMIN_USERNAME=${OPTARG}
 		;;
 	p) # Admin user name
 		ADMIN_PASSWORD=${OPTARG}
