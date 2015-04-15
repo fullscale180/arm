@@ -101,7 +101,8 @@
         "name": "jumpbox",
         "location": "[parameters('targetRegion')]",
         "dependsOn": [
-            "[concat('Microsoft.Network/networkInterfaces/', 'nicJumpbox')]"
+            "[concat('Microsoft.Network/networkInterfaces/', 'nicJumpbox')]",
+            "[concat('Microsoft.Storage/storageAccounts', concat(parameters('storageAccountNamePrefix'), 'jb'))]"
         ],
         "properties": {
             "hardwareProfile": {
