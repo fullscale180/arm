@@ -68,11 +68,35 @@
         "Description": "Name for couchbase cluster."
       }
     },
+    "nodesIpPrefix": {
+        "type": "string",
+        "metadata": {
+            "Description": "IP Prefix used to append index for static addresses"
+        }
+    },
     "vmSize": {
       "type": "string",
       "metadata": {
         "Description": "Size of the VM"
       },
+    },
+    "cbPackageDownloadBase": {
+      "type": "string",
+      "metadata": {
+        "Description": "Couchbase package download location"
+      }
+    },
+    "cbPackage": {
+      "type": "string",
+      "metadata": {
+        "Description": "Couchbase package to install"
+      }
+    },
+    "vmScripts": {
+      "type": "object",
+      "metadata": {
+        "Description": "Sripts to download and run on the VM"
+      }
     }
   },
   "variables": {
@@ -93,7 +117,8 @@
       "ipConfigurations": [{
         "name": "ipconfig1",
         "properties": {
-          "privateIPAllocationMethod": "Dynamic",
+        "privateIPAllocationMethod": "Static",
+        "privateIPAddress": "[concat(parameters('nodesIpPrefix'),copyindex())]",
           "subnet": {
             "id": "[variables('subnetRef')]"
           }
@@ -182,11 +207,8 @@
       "type": "CustomScriptForLinux",
       "typeHandlerVersion": "1.2",
       "settings": {
-        "fileUris": [
-          "[concat(parameters('baseUrl'), 'couchbase-azure-install.sh')]",
-          "http://packages.couchbase.com/releases/3.0.3/couchbase-server-enterprise_3.0.3-ubuntu12.04_amd64.deb"
-        ],
-        "commandToExecute": "[concat('bash couchbase-azure-install.sh -zn ', parameters('cbClusterName'))]"
+        "fileUris": "[parameters('vmScripts').scriptsToDownload]",
+        "commandToExecute": "[parameters('vmScripts').commandToExecute]"
       }
     }
   }]

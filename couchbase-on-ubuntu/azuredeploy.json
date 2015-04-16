@@ -68,12 +68,18 @@
                 "Description": "Prefx for VM names on the cluster"
             }
         },
-        "cbVersion": {
+        "cbPackageDownloadBase": {
             "type": "string",
-            "defaultValue": "3.0.3",
-            "allowedValues": ["3.0.3"],
+            "defaultValue": "http://packages.couchbase.com/releases/3.0.3/",
             "metadata": {
-                "Description": "Couchbase version to install"
+                "Description": "Couchbase package download location"
+            }
+        },
+        "cbPackage": {
+            "type": "string",
+            "defaultValue": "couchbase-server-enterprise_3.0.3-ubuntu12.04_amd64.deb",
+            "metadata": {
+                "Description": "Couchbase package to install"
             }
         },
         "jumpbox": {
@@ -86,35 +92,17 @@
             "metadata": {
                 "Description": "The flag allowing to enable or disable provisioning of the jumpbox VM that can be used to access the nodes"
             }
-        },
-        "gituser": {
-            "type": "string",
-            "defaultValue": "fullscale180",
-            "metadata": {
-                "Description": "Github user to bring the scripts for"
-            }
-        },
-        "gitrepo": {
-            "type": "string",
-            "defaultValue": "arm",
-            "metadata": {
-                "Description": "Github repo the templates and scripts are on."
-            }
-        },
-        "gitrepodir": {
-            "type": "string",
-            "defaultValue": "couchbase-on-ubuntu",
-            "metadata": {
-                "Description": "Directory where the scripts reside under the repo."
-            }
         }
     },
     "variables": {
         "cbClusterAvailabilitySetName": "cbClusterAvailabilitySet",
         "vmStorageAccountContainerName": "vhd",
-        "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
+        "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-12_04_5_LTS-amd64-server-20150413-en-us-30GB",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
         "sourceImage": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
+        "gituser": "fullscale180",
+        "gitrepo": "arm",
+        "gitrepodir": "couchbase-on-ubuntu",
         "dataDiskSize": "1023",
         "networkSettings": {
             "virtualNetworkName": "[parameters('virtualNetworkName')]",
@@ -122,17 +110,20 @@
             "subnet": {
                 "couchbaseSubnet": {
                     "name": "couchSubnet",
-                    "prefix": "10.0.0.0/24",
+                    "prefix": "10.0.0.0/20",
                     "vnet": "[parameters('virtualNetworkName')]"
                 }
             }
         },
+        "groupIpPrefix": "10.0.",
         "jumpboxTemplateName": "jumpbox-resources-",
-        "baseUrl": "[concat('https://raw.githubusercontent.com/', parameters('gituser'), '/', parameters('gitrepo'), '/master/', parameters('gitrepodir'), '/')]",
+        "baseUrl": "[concat('https://raw.githubusercontent.com/', variables('gituser'), '/', variables('gitrepo'), '/master/', variables('gitrepodir'), '/')]",
         "storageAccountGroupS": {
             "storageAccountCount": 1,
             "vmsPerStorageAccount": 3,
             "vmSize": "Standard_A2",
+            "usingStaticIpSettingsComment": "and IP addresses follow a convention",
+            "vmIpAddresses": "10.0.0.10 10.0.0.11 10.0.0.12",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 4,
             "backendIPConfigurations": [{
                 "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic0')),'/ipConfigurations/ipconfig1')]"
@@ -146,6 +137,8 @@
             "storageAccountCount": 1,
             "vmsPerStorageAccount": 4,
             "vmSize": "Standard_A6",
+            "usingStaticIpSettingsComment": "and IP addresses follow a convention",
+            "vmIpAddresses": "10.0.0.10 10.0.0.11 10.0.0.12 10.0.0.13",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 8,
             "backendIPConfigurations": [{
                 "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic0')),'/ipConfigurations/ipconfig1')]"
@@ -161,6 +154,8 @@
             "storageAccountCount": 5,
             "vmsPerStorageAccount": 1,
             "vmSize": "Standard_D14",
+            "usingStaticIpSettingsComment": "and IP addresses follow a convention",
+            "vmIpAddresses": "10.0.0.10 10.0.1.10 10.0.2.10 10.0.3.10 10.0.4.10",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 32,
             "backendIPConfigurations": [{
                 "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic0')),'/ipConfigurations/ipconfig1')]"
@@ -206,9 +201,7 @@
         "name": "jumpbox-resources",
         "type": "Microsoft.Resources/deployments",
         "apiVersion": "2015-01-01",
-        "dependsOn": [
-            "[concat('Microsoft.Resources/deployments/', 'shared-resources')]"
-        ],
+        "dependsOn": ["storageAccountGroupLoop"],
         "properties": {
             "mode": "Incremental",
             "templateLink": {
@@ -290,8 +283,20 @@
                 "cbClusterName": {
                     "value": "[parameters('cbClusterName')]"
                 },
+                 "nodesIpPrefix": {
+                    "value": "[concat(variables('groupIpPrefix'), copyindex(), '.1')]"
+                },
+                 "vmIpAddresses": {
+                    "value": "[variables('storageAccountGroup').vmIpAddresses]"
+                },
                 "vmSize": {
                     "value": "[variables('storageAccountGroup').vmSize]"
+                },
+                "cbPackageDownloadBase": {
+                    "value": "[parameters('cbPackageDownloadBase')]"
+                },
+                "cbPackage": {
+                    "value": "[parameters('cbPackage')]"
                 }
             }
         }
