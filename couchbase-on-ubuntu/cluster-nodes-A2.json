@@ -137,31 +137,31 @@
           "diskSizeGB": "[variables('dataDiskSize')]",
           "lun": 0,
           "vhd": {
-            "Uri": "[concat('http://', parameters('storageAccountName'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex(),'dataDisk0' ,'.vhd')]"
+            "Uri": "[concat('http://', parameters('storageAccountPrefix'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex(),'dataDisk0' ,'.vhd')]"
           }
         }, {
           "name": "datadisk1",
           "diskSizeGB": "[variables('dataDiskSize')]",
           "lun": 1,
           "vhd": {
-            "Uri": "[concat('http://', parameters('storageAccountName'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk1','.vhd')]"
+            "Uri": "[concat('http://', parameters('storageAccountPrefix'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk1','.vhd')]"
           }
         }, {
           "name": "datadisk2",
           "diskSizeGB": "[variables('dataDiskSize')]",
           "lun": 2,
           "vhd": {
-            "Uri": "[concat('http://', parameters('storageAccountName'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk2','.vhd')]"
+            "Uri": "[concat('http://', parameters('storageAccountPrefix'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk2','.vhd')]"
           }
         }, {
           "name": "datadisk3",
           "diskSizeGB": "[variables('dataDiskSize')]",
           "lun": 3,
           "vhd": {
-            "Uri": "[concat('http://', parameters('storageAccountName'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk3','.vhd')]"
+            "Uri": "[concat('http://', parameters('storageAccountPrefix'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk3','.vhd')]"
           }
         }],
-        "destinationVhdsContainer": "[concat('http://',parameters('storageAccountName'),  variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
+        "destinationVhdsContainer": "[concat('http://',parameters('storageAccountPrefix'),  variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
       },
       "networkProfile": {
         "networkInterfaces": [{
