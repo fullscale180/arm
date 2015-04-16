@@ -69,29 +69,35 @@ DATA_MOUNTPOINT="$DATA_DISKS/disk1"
 
 
 # If IP_LIST is non-empty, we are on the first node
-if [ "${IP_LIST}" -ne "" ]; then
+if [ -n "${IP_LIST}" ]; then
 
-    IFS='-' read -a HOST_IPS <<< "$IP_LIST"
+  IFS='-' read -a HOST_IPS <<< "$IP_LIST"
 
-    #Get the IP Addresses on this machine
-    declare -a MY_IPS=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
-    MY_IP=""
-    declare -a MEMBER_IP_ADDRESSES=()
-    for (( n=0 ; n<("${HOST_IPS[1]}"+0) ; n++))
-    do
-        HOST="${HOST_IPS[0]}${n}"
-        if ! [[ "${MY_IPS[@]}" =~ "${HOST}" ]]; then
-            MEMBER_IP_ADDRESSES+=($HOST)
-        else
-    		MY_IP="${HOST}"
-        fi
-    done
+  #Get the IP Addresses on this machine
+  declare -a MY_IPS=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
+  MY_IP=""
+  declare -a MEMBER_IP_ADDRESSES=()
+  for (( n=0 ; n<("${HOST_IPS[1]}"+0) ; n++))
+  do
+      HOST="${HOST_IPS[0]}${n}"
+      if ! [[ "${MY_IPS[@]}" =~ "${HOST}" ]]; then
+          MEMBER_IP_ADDRESSES+=($HOST)
+      else
+  		MY_IP="${HOST}"
+      fi
+  done
 
-	/opt/couchbase/bin/couchbase-cli node-init -c "$MY_IP":8091 --node-init-data-path="${DATA_MOUNTPOINT}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
-	/opt/couchbase/bin/couchbase-cli cluster-init -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --cluster-init-port=8091 --cluster-init-ramsize="${RAM_FOR_COUCHBASE}"
-	/opt/couchbase/bin/couchbase-cli setting-autofailover  -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --enable-auto-failover=1 --auto-failover-timeout=30
+  COUCHBASE_DATA="$DATA_MOUNTPOINT/couchbase"
+  mkdir -p "$COUCHBASE_DATA"
+  chown -R couchbase:couchbase "$COUCHBASE_DATA"
+  chmod 755 "$COUCHBASE_DATA"
 
-	for (( i = 0; i < ${#MEMBER_IP_ADDRESSES[@]}; i++ )); do
-		/opt/couchbase/bin/couchbase-cli server-add -c "$MY_IP":8091   -u "${ADMINISTRATOR}" -p "${PASSWORD}" —server-add="${MEMBER_IP_ADDRESSES[$i]}" 
-	done
+
+  /opt/couchbase/bin/couchbase-cli node-init -c "$MY_IP":8091 --node-init-data-path="${COUCHBASE_DATA}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
+  /opt/couchbase/bin/couchbase-cli cluster-init -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --cluster-init-port=8091 --cluster-init-ramsize="${RAM_FOR_COUCHBASE}"
+  /opt/couchbase/bin/couchbase-cli setting-autofailover  -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --enable-auto-failover=1 --auto-failover-timeout=30
+
+  for (( i = 0; i < ${#MEMBER_IP_ADDRESSES[@]}; i++ )); do
+    /opt/couchbase/bin/couchbase-cli server-add -c "$MY_IP":8091 -u "${ADMINISTRATOR}" -p "${PASSWORD}" --server-add="${MEMBER_IP_ADDRESSES[$i]}" 
+  done
 fi

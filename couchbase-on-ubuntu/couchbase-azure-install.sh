@@ -94,5 +94,18 @@ DATA_MOUNTPOINT="$DATA_DISKS/disk1"
 # Stripe all of the data disks
 bash ./vm-disk-utils-0.1.sh -b $DATA_DISKS -s
 
+ufw enable <<< 'y'
+ufw allow 11211
+ufw allow 11210
+ufw allow 11209
+ufw allow 4369
+ufw allow 8091
+ufw allow 8092
+ufw allow 18092
+ufw allow 11214
+ufw allow 11215
+ufw allow 21100
+ufw allow 21299
+
 install_cb
 log "Install couchbase complete!"
