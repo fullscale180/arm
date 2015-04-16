@@ -67,53 +67,37 @@ while getopts :n:pn:i:a:pw:r: optname; do
   esac
 done
 
-# Install couchbase
-install_cb()
-{
-	# First prepare the environment as per http://blog.couchbase.com/often-overlooked-linux-os-tweaks
-
-	log "Disable swappiness"
-	# We may not reboot, disable with the running system
-	# Set the value for the running system
-	echo 0 > /proc/sys/vm/swappiness
-
-	# Backup sysctl.conf
-	cp -p /etc/sysctl.conf /etc/sysctl.conf.`date +%Y%m%d-%H:%M`
-
-	# Set the value in /etc/sysctl.conf so it stays after reboot.
-	echo '' >> /etc/sysctl.conf
-	echo '#Set swappiness to 0 to avoid swapping' >> /etc/sysctl.conf
-	echo 'vm.swappiness = 0' >> /etc/sysctl.conf
-
-	log "Disable THP"
-	# Disble THP
-	# We may not reboot yet, so disable for this time first
-	# Disable THP on a running system
-	echo never > /sys/kernel/mm/transparent_hugepage/enabled
-	echo never > /sys/kernel/mm/transparent_hugepage/defrag
-
-	# Backup rc.local
-	cp -p /etc/rc.local /etc/rc.local.`date +%Y%m%d-%H:%M`
-	sed -i -e '$i \ if test -f /sys/kernel/mm/transparent_hugepage/enabled; then \
- 			 echo never > /sys/kernel/mm/transparent_hugepage/enabled \
-		  fi \ \
-		if test -f /sys/kernel/mm/transparent_hugepage/defrag; then \
-		   echo never > /sys/kernel/mm/transparent_hugepage/defrag \
-		fi \
-		\n' /etc/rc.local
-	
-
-    log "Installing Couchbase package - $PACKAGE_NAME"    
-	sudo dpkg -i ./$PACKAGE_NAME
-}
-
 DATA_DISKS="/datadisks"
 
 DATA_MOUNTPOINT="$DATA_DISKS/disk1"
 
 
-# Stripe all of the data disks
-bash ./vm-disk-utils-0.1.sh -b $DATA_DISKS -s
+# If IP_LIST is non-empty, we are on the first node
+if [ "${IP_LIST}" -ne "" ]; then
 
-install_cb
-log "Install couchbase complete!"
+    IFS='-' read -a HOST_IPS <<< "$IP_LIST"
+
+    #Get the IP Addresses on this machine
+    declare -a MY_IPS=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
+    MY_IP=""
+    declare -a MEMBER_IP_ADDRESSES=()
+    for (( n=0 ; n<("${HOST_IPS[1]}"+0) ; n++))
+    do
+        HOST="${HOST_IPS[0]}${n}"
+        if ! [[ "${MY_IPS[@]}" =~ "${HOST}" ]]; then
+            MEMBER_IP_ADDRESSES+=($HOST)
+        else
+    		MY_IP="${HOST}"
+        fi
+    done
+
+	if [ "${IS_FIRST_NODE}" = 1 ]; then
+		/opt/couchbase/bin/couchbase-cli node-init -c "$MY_IP":8091 --node-init-data-path="${DATA_MOUNTPOINT}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
+		/opt/couchbase/bin/couchbase-cli cluster-init -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --cluster-init-port=8091 --cluster-init-ramsize="${RAM_FOR_COUCHBASE}"
+		/opt/couchbase/bin/couchbase-cli setting-autofailover  -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --enable-auto-failover=1 --auto-failover-timeout=30
+
+		for (( i = 0; i < ${#MEMBER_IP_ADDRESSES[@]}; i++ )); do
+			/opt/couchbase/bin/couchbase-cli server-add -c "$MY_IP":8091   -u "${ADMINISTRATOR}" -p "${PASSWORD}" —server-add="${MEMBER_IP_ADDRESSES[$i]}" 
+		done
+	fi
+fi
