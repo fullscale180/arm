@@ -15,7 +15,7 @@
     "internalIp": {
       "type":"string"
     },
-    "storageAccountGroup": {
+    "clusterSpec": {
       "type":"object"
     }
   },
@@ -44,7 +44,7 @@
           {
             "name": "LBBE",
             "properties": {
-              "backendIPConfigurations": "[parameters('storageAccountGroup').backendIPConfigurations]"
+              "backendIPConfigurations": "[parameters('clusterSpec').backendIPConfigurations]"
             }
           }
         ],
@@ -61,8 +61,8 @@
                 "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer'),'/backendAddressPools/LBBE')]"
               },
               "protocol": "tcp",
-              "frontendPort": 8092,
-              "backendPort": 8092,
+              "frontendPort": 8091,
+              "backendPort": 8091,
               "enableFloatingIP": false,
               "idleTimeoutInMinutes": 5
             }

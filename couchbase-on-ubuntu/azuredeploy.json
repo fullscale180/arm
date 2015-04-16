@@ -54,13 +54,6 @@
                 "Description": "T-shirt size of the Couchbase cluster"
             }
         },
-        "dnsNameforLBIP": {
-            "type": "string",
-            "defaultValue": "fs180cbsample",
-            "metadata": {
-                "Description": "Load balancer subdomain name: for example (<subdomain>.westus.cloudapp.azure.com)"
-            }
-        },
         "vmNamePrefix": {
             "type": "string",
             "defaultValue": "cbnode",
@@ -110,227 +103,230 @@
             "subnet": {
                 "couchbaseSubnet": {
                     "name": "couchSubnet",
-                    "prefix": "10.0.0.0/20",
+                    "prefix": "10.0.0.0/24",
                     "vnet": "[parameters('virtualNetworkName')]"
                 }
             }
         },
-        "groupIpPrefix": "10.0.",
+        "nodesIpPrefix": "10.0.0.1",
         "jumpboxTemplateName": "jumpbox-resources-",
         "baseUrl": "[concat('https://raw.githubusercontent.com/', variables('gituser'), '/', variables('gitrepo'), '/master/', variables('gitrepodir'), '/')]",
-        "storageAccountGroupS": {
+        "clusterTshirtSizeS": {
             "storageAccountCount": 1,
-            "vmsPerStorageAccount": 3,
+            "clusterSize": 3,
             "couchbaseRamQuota": 2800,
             "vmSize": "Standard_A2",
-            "usingStaticIpSettingsComment": "and IP addresses follow a convention",
-            "vmIpAddresses": "10.0.0.10 10.0.0.11 10.0.0.12",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 4,
+            "vmTemplate": "[concat(variables('baseUrl'), 'cluster-nodes-A2.json')]",
             "backendIPConfigurations": [{
-                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic0')),'/ipConfigurations/ipconfig1')]"
+                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic0'),'/ipConfigurations/ipconfig1')]"
             }, {
-                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic1')),'/ipConfigurations/ipconfig1')]"
+                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic1'),'/ipConfigurations/ipconfig1')]"
             }, {
-                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic2')),'/ipConfigurations/ipconfig1')]"
+                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic2'),'/ipConfigurations/ipconfig1')]"
             }]
         },
-        "storageAccountGroupM": {
+        "clusterTshirtSizeM": {
             "storageAccountCount": 1,
-            "vmsPerStorageAccount": 4,
+            "clusterSize": 4,
             "couchbaseRamQuota": 22900,
             "vmSize": "Standard_A6",
-            "usingStaticIpSettingsComment": "and IP addresses follow a convention",
-            "vmIpAddresses": "10.0.0.10 10.0.0.11 10.0.0.12 10.0.0.13",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 8,
+            "vmTemplate": "[concat(variables('baseUrl'), 'cluster-nodes-A6.json')]",
             "backendIPConfigurations": [{
-                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic0')),'/ipConfigurations/ipconfig1')]"
+                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic0'),'/ipConfigurations/ipconfig1')]"
             }, {
-                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic1')),'/ipConfigurations/ipconfig1')]"
+                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic1'),'/ipConfigurations/ipconfig1')]"
             }, {
-                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic2')),'/ipConfigurations/ipconfig1')]"
+                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic2'),'/ipConfigurations/ipconfig1')]"
             }, {
-                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic3')),'/ipConfigurations/ipconfig1')]"
+                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic3'),'/ipConfigurations/ipconfig1')]"
             }]
         },
-        "storageAccountGroupL": {
+        "clusterTshirtSizeL": {
             "storageAccountCount": 5,
-            "vmsPerStorageAccount": 1,
+            "clusterSize": 5,
             "couchbaseRamQuota": 91750,
             "vmSize": "Standard_D14",
-            "usingStaticIpSettingsComment": "and IP addresses follow a convention",
-            "vmIpAddresses": "10.0.0.10 10.0.1.10 10.0.2.10 10.0.3.10 10.0.4.10",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 32,
+            "vmTemplate": "[concat(variables('baseUrl'), 'cluster-nodes-D14.json')]",
             "backendIPConfigurations": [{
-                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic0')),'/ipConfigurations/ipconfig1')]"
+                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic0'),'/ipConfigurations/ipconfig1')]"
             }, {
-                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic1')),'/ipConfigurations/ipconfig1')]"
+                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic1'),'/ipConfigurations/ipconfig1')]"
             }, {
-                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic2')),'/ipConfigurations/ipconfig1')]"
+                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic2'),'/ipConfigurations/ipconfig1')]"
             }, {
-                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic3')),'/ipConfigurations/ipconfig1')]"
+                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic3'),'/ipConfigurations/ipconfig1')]"
             }, {
-                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', concat(parameters('storageAccountNamePrefix'), '0nic4')),'/ipConfigurations/ipconfig1')]"
+                "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic4'),'/ipConfigurations/ipconfig1')]"
             }]
         },
-        "storageAccountGroup": "[variables(concat('storageAccountGroup', parameters('tshirtSize')))]",
-        "internalIp": "10.0.0.100"
+        "internalIp": "10.0.0.100",
+        "cbPackageDownloadLink": "[concat(parameters('cbPackageDownloadBase'), parameters('cbPackage'))]",
+        "vmScripts": {
+            "scriptsToDownload": [
+                "[concat(variables('baseUrl'), 'couchbase-azure-install.sh')]",
+                "[variables('cbPackageDownloadLink')]",
+                "[concat(variables('baseUrl'), 'vm-disk-utils-0.1.sh')]"
+            ],
+            "commandToExecute": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -pn ', parameters('cbPackage'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSize), ' -a ', parameters('adminUsername'), ' -pw ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota)]",
+            "commandToExecuteForFirstMember": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -pn ', parameters('cbPackage'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSize), ' -a ', parameters('adminUsername'), ' -pw ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota, ' -l')]"
+        },
+        "clusterSpec": "[variables(concat('clusterTshirtSize', parameters('tshirtSize')))]"
     },
     "resources": [{
-        "name": "shared-resources",
-        "type": "Microsoft.Resources/deployments",
-        "apiVersion": "2015-01-01",
-        "properties": {
-            "mode": "Incremental",
-            "templateLink": {
-                "uri": "[concat(variables('baseUrl'), 'shared-resources.json')]",
-                "contentVersion": "1.0.0.0"
-            },
-            "parameters": {
-                "targetRegion": {
-                    "value": "[parameters('targetRegion')]"
+            "name": "shared-resources",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('baseUrl'), 'shared-resources.json')]",
+                    "contentVersion": "1.0.0.0"
                 },
-                "networkSettings": {
-                    "value": "[variables('networkSettings')]"
-                },
-                "cbClusterAvailabilitySetName": {
-                    "value": "[variables('cbClusterAvailabilitySetName')]"
-                },
-                "storageAccountNamePrefix": {
-                    "value": "[parameters('storageAccountNamePrefix')]"
+                "parameters": {
+                    "targetRegion": {
+                        "value": "[parameters('targetRegion')]"
+                    },
+                    "networkSettings": {
+                        "value": "[variables('networkSettings')]"
+                    },
+                    "cbClusterAvailabilitySetName": {
+                        "value": "[variables('cbClusterAvailabilitySetName')]"
+                    },
+                    "storageAccountNamePrefix": {
+                        "value": "[parameters('storageAccountNamePrefix')]"
+                    }
                 }
             }
-        }
-    }, {
-        "name": "jumpbox-resources",
-        "type": "Microsoft.Resources/deployments",
-        "apiVersion": "2015-01-01",
-        "dependsOn": ["storageAccountGroupLoop"],
-        "properties": {
-            "mode": "Incremental",
-            "templateLink": {
-                "uri": "[concat(variables('baseUrl'), variables('jumpboxTemplateName'), parameters('jumpbox'), '.json')]",
-                "contentVersion": "1.0.0.0"
+        }, {
+            "name": "[concat(parameters('storageAccountNamePrefix'), copyindex())]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2014-12-01-preview",
+            "dependsOn": ["[concat('Microsoft.Resources/deployments/', 'shared-resources')]"],
+            "location": "[parameters('targetRegion')]",
+            "copy": {
+                "name": "storageAccountsLoop",
+                "count": "[variables('clusterSpec').storageAccountCount]"
             },
-            "parameters": {
-                "targetRegion": {
-                    "value": "[parameters('targetRegion')]"
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        }, {
+            "name": "cluster-nodes",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "storageAccountsLoop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('clusterSpec').vmTemplate]",
+                    "contentVersion": "1.0.0.0"
                 },
-                "virtualNetworkName": {
-                    "value": "[parameters('virtualNetworkName')]"
-                },
-                "subnetName": {
-                    "value": "[variables('networkSettings').subnet.couchbaseSubnet.name]"
-                },
-                "storageAccountNamePrefix": {
-                    "value": "[parameters('storageAccountNamePrefix')]"
-                },
-                "adminUsername": {
-                    "value": "[parameters('adminUsername')]"
-                },
-                "adminPassword": {
-                    "value": "[parameters('adminPassword')]"
-                },
-                "computerNamePrefix": {
-                    "value": "[parameters('vmNamePrefix')]"
+                "parameters": {
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "targetRegion": {
+                        "value": "[parameters('targetRegion')]"
+                    },
+                    "tshirtSize": {
+                        "value": "[parameters('tshirtSize')]"
+                    },
+                    "subnet": {
+                        "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
+                    },
+                    "availabilitySet": {
+                        "value": "[variables('cbClusterAvailabilitySetName')]"
+                    },
+                    "storageAccountPrefix": {
+                        "value": "[parameters('storageAccountNamePrefix')]"
+                    },
+                    "sourceImage": {
+                        "value": "[variables('sourceImage')]"
+                    },
+                    "nodeCount": {
+                        "value": "[variables('clusterSpec').clusterSize]"
+                    },
+                    "nodesIpPrefix": {
+                        "value": "[variables('nodesIpPrefix')]"
+                    },
+                    "vmSize": {
+                        "value": "[variables('clusterSpec').vmSize]"
+                    },
+                    "vmScripts": {
+                        "value": "[variables('vmScripts')]"
+                    }
                 }
             }
-        }
-    }, {
-        "name": "[concat('storage-account-group',copyindex())]",
-        "type": "Microsoft.Resources/deployments",
-        "apiVersion": "2015-01-01",
-        "dependsOn": [
-            "[concat('Microsoft.Resources/deployments/', 'shared-resources')]"
-        ],
-        "copy": {
-            "name": "storageAccountGroupLoop",
-            "count": "[variables('storageAccountGroup').storageAccountCount]"
         },
-        "properties": {
-            "mode": "Incremental",
-            "templateLink": {
-                "uri": "[concat(variables('baseUrl'), 'storage-account-group.json')]",
-                "contentVersion": "1.0.0.0"
-            },
-            "parameters": {
-                "adminUsername": {
-                    "value": "[parameters('adminUsername')]"
+        {
+            "name": "loadBalancerConfiguration",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": ["[concat('Microsoft.Resources/deployments/', 'cluster-nodes')]"],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('baseUrl'), 'load-balancer.json')]",
+                    "contentVersion": "1.0.0.0"
                 },
-                "adminPassword": {
-                    "value": "[parameters('adminPassword')]"
+                "parameters": {
+                    "targetRegion": {
+                        "value": "[parameters('targetRegion')]"
+                    },
+                    "subnet": {
+                        "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
+                    },
+                    "internalIp": {
+                        "value": "[variables('internalIp')]"
+                    },
+                    "clusterSpec": {
+                        "value": "[variables('clusterSpec')]"
+                    }
+                }
+            }
+        }, {
+            "name": "jumpbox-resources",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('baseUrl'), variables('jumpboxTemplateName'), parameters('jumpbox'), '.json')]",
+                    "contentVersion": "1.0.0.0"
                 },
-                "targetRegion": {
-                    "value": "[parameters('targetRegion')]"
-                },
-                "tshirtSize": {
-                    "value": "[parameters('tshirtSize')]"
-                },
-                "subnet": {
-                    "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
-                },
-                "availabilitySet": {
-                    "value": "[variables('cbClusterAvailabilitySetName')]"
-                },
-                "storageAccountName": {
-                    "value": "[concat(parameters('storageAccountNamePrefix'), copyindex())]"
-                },
-                "sourceImage": {
-                    "value": "[variables('sourceImage')]"
-                },
-                "nodeCountPerStorageAccount": {
-                    "value": "[variables('storageAccountGroup').vmsPerStorageAccount]"
-                },
-                "baseUrl": {
-                    "value": "[variables('baseUrl')]"
-                },
-                "cbClusterName": {
-                    "value": "[parameters('cbClusterName')]"
-                },
-                 "nodesIpPrefix": {
-                    "value": "[concat(variables('groupIpPrefix'), copyindex(), '.1')]"
-                },
-                 "vmIpAddresses": {
-                    "value": "[variables('storageAccountGroup').vmIpAddresses]"
-                },
-                "vmSize": {
-                    "value": "[variables('storageAccountGroup').vmSize]"
-                },
-                "cbPackageDownloadBase": {
-                    "value": "[parameters('cbPackageDownloadBase')]"
-                },
-                "cbPackage": {
-                    "value": "[parameters('cbPackage')]"
-                },
-                "cbRamQuota": {
-                    "value": "[variables('storageAccountGroup').couchbaseRamQuota]"
+                "parameters": {
+                    "targetRegion": {
+                        "value": "[parameters('targetRegion')]"
+                    },
+                    "virtualNetworkName": {
+                        "value": "[parameters('virtualNetworkName')]"
+                    },
+                    "subnetName": {
+                        "value": "[variables('networkSettings').subnet.couchbaseSubnet.name]"
+                    },
+                    "storageAccountNamePrefix": {
+                        "value": "[parameters('storageAccountNamePrefix')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "computerNamePrefix": {
+                        "value": "[parameters('vmNamePrefix')]"
+                    }
                 }
             }
         }
-    }, {
-        "name": "loadBalancerConfiguration",
-        "type": "Microsoft.Resources/deployments",
-        "apiVersion": "2015-01-01",
-        "dependsOn": ["storageAccountGroupLoop"],
-        "properties": {
-            "mode": "Incremental",
-            "templateLink": {
-                "uri": "[concat(variables('baseUrl'), 'load-balancer.json')]",
-                "contentVersion": "1.0.0.0"
-            },
-            "parameters": {
-                "targetRegion": {
-                    "value": "[parameters('targetRegion')]"
-                },
-                "subnet": {
-                    "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
-                },
-                "internalIp": {
-                    "value": "[variables('internalIp')]"
-                },
-                "storageAccountGroup": {
-                    "value": "[variables('storageAccountGroup')]"
-                }
-            }
-        }
-    }]
+    ]
 }

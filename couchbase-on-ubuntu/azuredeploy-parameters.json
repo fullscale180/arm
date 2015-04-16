@@ -5,14 +5,11 @@
     "adminPassword": {
         "value": "P@ssword1"
     },
-    "dnsNameforLBIP": {
-        "value":"erccb2"
-    },
     "tshirtSize": {
-        "value":"S"
+        "value": "S"
     },
-    "storageAccountNamePrefix" : {
-        "value":"f180armdply2"
+    "storageAccountNamePrefix": {
+        "value": "f180armdply12"
     },
     "targetRegion": {
         "value": "West US"

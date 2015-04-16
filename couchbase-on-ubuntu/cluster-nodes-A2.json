@@ -38,10 +38,10 @@
         "Description": "The availabilty set to use for the data nodes"
       }
     },
-    "storageAccountName": {
+    "storageAccountPrefix": {
       "type": "string",
       "metadata": {
-        "Description": "Unique namespace for the Storage Account where the Virtual Machine's disks will be placed"
+        "Description": "Prefix of storage account the VM is assigned to"
       }
     },
     "sourceImage": {
@@ -50,47 +50,23 @@
         "Description": "Source image for the VM"
       },
     },
-    "nodeCountPerStorageAccount": {
+    "nodeCount": {
       "type": "int",
       "metadata": {
         "Description": "Number of cluster nodes per storage account. One storage account cannot support more than 40 disks."
       }
     },
-    "baseUrl": {
-      "type": "string",
-      "metadata": {
-        "Description": "Base URL of the templates and scripts."
-      }
-    },
-    "cbClusterName": {
-      "type": "string",
-      "metadata": {
-        "Description": "Name for couchbase cluster."
-      }
-    },
     "nodesIpPrefix": {
-        "type": "string",
-        "metadata": {
-            "Description": "IP Prefix used to append index for static addresses"
-        }
+      "type": "string",
+      "metadata": {
+        "Description": "IP Prefix used to append index for static addresses"
+      }
     },
     "vmSize": {
       "type": "string",
       "metadata": {
         "Description": "Size of the VM"
       },
-    },
-    "cbPackageDownloadBase": {
-      "type": "string",
-      "metadata": {
-        "Description": "Couchbase package download location"
-      }
-    },
-    "cbPackage": {
-      "type": "string",
-      "metadata": {
-        "Description": "Couchbase package to install"
-      }
     },
     "vmScripts": {
       "type": "object",
@@ -102,23 +78,26 @@
   "variables": {
     "vmStorageAccountContainerName": "vhd",
     "subnetRef": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('subnet').vnet), '/subnets/', parameters('subnet').name)]",
-    "dataDiskSize": 1023
+    "dataDiskSize": 1023,
+    "storageAccountSuffixFor0": "0",
+    "storageAccountSuffixFor1": "0",
+    "storageAccountSuffixFor2": "0",
   },
   "resources": [{
     "apiVersion": "2014-12-01-preview",
     "type": "Microsoft.Network/networkInterfaces",
-    "name": "[concat(parameters('storageAccountName'), 'nic', copyindex())]",
+    "name": "[concat('nic', copyindex())]",
     "location": "[parameters('targetRegion')]",
     "copy": {
-      "name": "[concat(parameters('storageAccountName'),'nicLoop')]",
-      "count": "[parameters('nodeCountPerStorageAccount')]"
+      "name": "nicLoop",
+      "count": "[parameters('nodeCount')]"
     },
     "properties": {
       "ipConfigurations": [{
         "name": "ipconfig1",
         "properties": {
-        "privateIPAllocationMethod": "Static",
-        "privateIPAddress": "[concat(parameters('nodesIpPrefix'),copyindex())]",
+          "privateIPAllocationMethod": "Static",
+          "privateIPAddress": "[concat(parameters('nodesIpPrefix'), copyindex())]",
           "subnet": {
             "id": "[variables('subnetRef')]"
           }
@@ -128,14 +107,14 @@
   }, {
     "apiVersion": "2014-12-01-preview",
     "type": "Microsoft.Compute/virtualMachines",
-    "name": "[concat(parameters('storageAccountName'), 'vm', copyindex())]",
+    "name": "[concat('vm', copyindex())]",
     "location": "[parameters('targetRegion')]",
     "copy": {
-      "name": "[concat(parameters('storageAccountName'), 'virtualMachineLoop')]",
-      "count": "[parameters('nodeCountPerStorageAccount')]"
+      "name": "virtualMachineLoop",
+      "count": "[parameters('nodeCount')]"
     },
     "dependsOn": [
-      "[concat('Microsoft.Network/networkInterfaces/', parameters('storageAccountName'), 'nic', copyindex())]"
+      "[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]"
     ],
     "properties": {
       "availabilitySet": {
@@ -145,7 +124,7 @@
         "vmSize": "[parameters('vmSize')]"
       },
       "osProfile": {
-        "computername": "[concat(parameters('storageAccountName'), 'vm', copyIndex())]",
+        "computername": "[concat('vm', copyIndex())]",
         "adminUsername": "[parameters('adminUsername')]",
         "adminPassword": "[parameters('adminPassword')]"
       },
@@ -158,57 +137,74 @@
           "diskSizeGB": "[variables('dataDiskSize')]",
           "lun": 0,
           "vhd": {
-            "Uri": "[concat('http://', parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', parameters('storageAccountName'),'vm', copyindex(),'dataDisk0' ,'.vhd')]"
+            "Uri": "[concat('http://', parameters('storageAccountName'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex(),'dataDisk0' ,'.vhd')]"
           }
         }, {
           "name": "datadisk1",
           "diskSizeGB": "[variables('dataDiskSize')]",
           "lun": 1,
           "vhd": {
-            "Uri": "[concat('http://', parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/',parameters('storageAccountName'),'vm', copyindex() ,'dataDisk1','.vhd')]"
+            "Uri": "[concat('http://', parameters('storageAccountName'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk1','.vhd')]"
           }
         }, {
           "name": "datadisk2",
           "diskSizeGB": "[variables('dataDiskSize')]",
           "lun": 2,
           "vhd": {
-            "Uri": "[concat('http://', parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/',parameters('storageAccountName'),'vm', copyindex() ,'dataDisk2','.vhd')]"
+            "Uri": "[concat('http://', parameters('storageAccountName'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk2','.vhd')]"
           }
         }, {
           "name": "datadisk3",
           "diskSizeGB": "[variables('dataDiskSize')]",
           "lun": 3,
           "vhd": {
-            "Uri": "[concat('http://', parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/',parameters('storageAccountName'),'vm', copyindex() ,'dataDisk3','.vhd')]"
+            "Uri": "[concat('http://', parameters('storageAccountName'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk3','.vhd')]"
           }
         }],
-        "destinationVhdsContainer": "[concat('http://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
+        "destinationVhdsContainer": "[concat('http://',parameters('storageAccountName'),  variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
       },
       "networkProfile": {
         "networkInterfaces": [{
-          "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(parameters('storageAccountName'),'nic', copyindex()))]"
+          "id": "[resourceId('Microsoft.Network/networkInterfaces',concat('nic', copyindex()))]"
         }]
       }
     }
   }, {
     "type": "Microsoft.Compute/virtualMachines/extensions",
-    "name": "[concat(parameters('storageAccountName'),'vm', copyindex(), '/installcouchbase')]",
+    "name": "[concat('vm', copyindex(), '/installcouchbase')]",
     "apiVersion": "2014-12-01-preview",
     "location": "[parameters('targetRegion')]",
     "copy": {
-      "name": "[concat(parameters('storageAccountName'), 'virtualMachineExtensionsLoop')]",
-      "count": "[parameters('nodeCountPerStorageAccount')]"
+      "name": "virtualMachineExtensionsLoop",
+      "count": "[parameters('nodeCount')]"
     },
     "dependsOn": [
-      "[concat('Microsoft.Compute/virtualMachines/', parameters('storageAccountName'), 'vm', copyindex())]"
+      "[concat('Microsoft.Compute/virtualMachines/', 'vm', copyindex())]"
     ],
     "properties": {
       "publisher": "Microsoft.OSTCExtensions",
       "type": "CustomScriptForLinux",
       "typeHandlerVersion": "1.2",
       "settings": {
-        "fileUris": "[parameters('vmScripts').scriptsToDownload]",
+        "fileUris": [],
         "commandToExecute": "[parameters('vmScripts').commandToExecute]"
+      }
+    }
+  }, {
+    "type": "Microsoft.Compute/virtualMachines/extensions",
+    "name": "[concat('vm0', '/configurecouchbase')]",
+    "apiVersion": "2014-12-01-preview",
+    "location": "[parameters('targetRegion')]",
+    "dependsOn": [
+      "virtualMachineExtensionsLoop"
+    ],
+    "properties": {
+      "publisher": "Microsoft.OSTCExtensions",
+      "type": "CustomScriptForLinux",
+      "typeHandlerVersion": "1.2",
+      "settings": {
+        "fileUris": [],
+        "commandToExecute": "[parameters('vmScripts').commandToExecuteForFirstMember]"
       }
     }
   }]
