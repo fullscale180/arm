@@ -64,8 +64,8 @@ while getopts :n:i:a:pw:r: optname; do
 done
 
 DATA_DISKS="/datadisks"
-
 DATA_MOUNTPOINT="$DATA_DISKS/disk1"
+COUCHBASE_DATA="$DATA_MOUNTPOINT/couchbase"
 
 
 # If IP_LIST is non-empty, we are on the first node
@@ -87,18 +87,12 @@ if [ -n "${IP_LIST}" ]; then
       fi
   done
 
-  COUCHBASE_DATA="$DATA_MOUNTPOINT/couchbase"
-  mkdir -p "$COUCHBASE_DATA"
-  chown -R couchbase:couchbase "$COUCHBASE_DATA"
-  chmod 755 "$COUCHBASE_DATA"
+  /opt/couchbase/bin/couchbase-cli node-init -c "$MY_IP":8091 --node-init-data-path="${COUCHBASE_DATA}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
+  /opt/couchbase/bin/couchbase-cli cluster-init -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --cluster-init-port=8091 --cluster-init-ramsize="${RAM_FOR_COUCHBASE}"
+  /opt/couchbase/bin/couchbase-cli setting-autofailover  -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --enable-auto-failover=1 --auto-failover-timeout=30
 
-
-#  /opt/couchbase/bin/couchbase-cli node-init -c "$MY_IP":8091 --node-init-data-path="${COUCHBASE_DATA}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
-#  /opt/couchbase/bin/couchbase-cli cluster-init -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --cluster-init-port=8091 --cluster-init-ramsize="${RAM_FOR_COUCHBASE}"
-#  /opt/couchbase/bin/couchbase-cli setting-autofailover  -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --enable-auto-failover=1 --auto-failover-timeout=30
-
- # for (( i = 0; i < ${#MEMBER_IP_ADDRESSES[@]}; i++ )); do
- #   /opt/couchbase/bin/couchbase-cli server-add -c "$MY_IP":8091 -u "${ADMINISTRATOR}" -p "${PASSWORD}" --server-add="${MEMBER_IP_ADDRESSES[$i]}" 
- # done
+  for (( i = 0; i < ${#MEMBER_IP_ADDRESSES[@]}; i++ )); do
+    /opt/couchbase/bin/couchbase-cli server-add -c "$MY_IP":8091 -u "${ADMINISTRATOR}" -p "${PASSWORD}" --server-add="${MEMBER_IP_ADDRESSES[$i]}" 
+  done
  
 fi

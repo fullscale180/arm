@@ -87,12 +87,18 @@ install_cb()
 }
 
 DATA_DISKS="/datadisks"
-
 DATA_MOUNTPOINT="$DATA_DISKS/disk1"
+COUCHBASE_DATA="$DATA_MOUNTPOINT/couchbase"
 
 
 # Stripe all of the data disks
 bash ./vm-disk-utils-0.1.sh -b $DATA_DISKS -s
+
+
+mkdir -p "$COUCHBASE_DATA"
+chown -R couchbase:couchbase "$COUCHBASE_DATA"
+chmod 755 "$COUCHBASE_DATA"
+
 
 install_cb
 log "Install couchbase complete!"
