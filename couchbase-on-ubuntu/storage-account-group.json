@@ -97,6 +97,12 @@
       "metadata": {
         "Description": "Couchbase package to install"
       }
+    },
+    "cbRamQuota": {
+      "type": "int",
+      "metadata": {
+        "Description": "RAM quota for Couchbase in MB"
+      }
     }
   },
   "variables": {
@@ -109,9 +115,9 @@
       "scriptsToDownload": [
         "[concat(parameters('baseUrl'), 'couchbase-azure-install.sh')]",
         "[variables('cbPackageDownloadLink')]",
-        "https://raw.githubusercontent.com/azurermtemplates/azurermtemplates/master/shared_scripts/ubuntu/vm-disk-utils-0.1.sh"
+        "[concat(parameters('baseUrl'), 'vm-disk-utils-0.1.sh')]"
       ],
-      "commandToExecute": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -p ', parameters('cbPackage'), ' -i ', parameters('vmIpAddresses'))]"
+      "commandToExecute": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -pn ', parameters('cbPackage'), ' -i ', parameters('vmIpAddresses'), ' -a ', parameters('adminUsername'), ' -pw ', parameters('adminPassword'), ' -r ', parameters('cbRamQuota'))]"
     }
   },
   "resources": [{

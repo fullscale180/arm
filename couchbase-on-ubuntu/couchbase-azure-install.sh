@@ -37,20 +37,33 @@ fi
 CLUSTER_NAME="couchbase"
 PACKAGE_NAME="couchbase-server-enterprise_3.0.3-ubuntu12.04_amd64.deb"
 IP_LIST=""
+ADMINISTRATOR="couchbaseadmin"
+PASSWORD="P@ssword1"
+# Minimum VM size we are assuming is A2, which has 3.5GB, 2800MB is about 80% as recommended
+RAM_FOR_COUCHBASE=2800
 
 #Loop through options passed
-while getopts :n:p: optname; do
+while getopts :n:pn:i:a:pw:r: optname; do
     log "Option $optname set with value ${OPTARG}"
   case $optname in
     n)  #set cluster name
       CLUSTER_NAME=${OPTARG}
       ;;
-    p) #Couchbase package name
+    pn) #Couchbase package name
       PACKAGE_NAME=${OPTARG}
       ;;
     i) #Static IPs of the cluster members
       IP_LIST=${OPTARG}
-      ;;      
+      ;;    
+    a) #Static IPs of the cluster members
+      ADMINISTRATOR=${OPTARG}
+      ;; 
+	pw) #Static IPs of the cluster members
+	  PASSWORD=${OPTARG}
+	  ;;         
+	r) #Static IPs of the cluster members
+	  RAM_FOR_COUCHBASE=${OPTARG}
+	  ;;         	  
   esac
 done
 
@@ -98,7 +111,27 @@ DATA_DISKS="/datadisks"
 # Stripe all of the data disks
 bash ./vm-disk-utils-0.1.sh -b $DATA_DISKS -s
 
-DATA_DIRECTORY="$DATA_DISKS/disk1/couchbase"
+DATA_MOUNTPOINT="$DATA_DISKS/disk1"
 
 install_cb
 
+MEMBER_IP_ADDRESSES=($IP_LIST)
+declare -a MY_IPS=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
+
+IS_FIRST_NODE=0
+
+for (( i = 0; i < ${#MY_IPS[@]}; i++ )); do
+	if [ "${MY_IPS[$i]}" = "${MEMBER_IP_ADDRESSES[0]}" ]; then
+		IS_FIRST_NODE=1
+	fi
+done
+
+if [ "${IS_FIRST_NODE}" = 1 ]; then
+	/opt/couchbase/bin/couchbase-cli node-init -c "${MEMBER_IP_ADDRESSES[0]}":8091 --node-init-data-path="${DATA_MOUNTPOINT}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
+	/opt/couchbase/bin/couchbase-cli cluster-init -c "${MEMBER_IP_ADDRESSES[0]}":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --cluster-init-port=8091 --cluster-init-ramsize="${RAM_FOR_COUCHBASE}"
+	/opt/couchbase/bin/couchbase-cli setting-autofailover  -c "${MEMBER_IP_ADDRESSES[0]}":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --enable-auto-failover=1 --auto-failover-timeout=30
+
+	for (( i = 1; i < ${#MEMBER_IP_ADDRESSES[@]}; i++ )); do
+		/opt/couchbase/bin/couchbase-cli server-add -c "${MEMBER_IP_ADDRESSES[0]}":8091   -u "${ADMINISTRATOR}" -p "${PASSWORD}" —server-add="${MEMBER_IP_ADDRESSES[$i]}" 
+	done
+fi

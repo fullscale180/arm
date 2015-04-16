@@ -121,6 +121,7 @@
         "storageAccountGroupS": {
             "storageAccountCount": 1,
             "vmsPerStorageAccount": 3,
+            "couchbaseRamQuota": 2800,
             "vmSize": "Standard_A2",
             "usingStaticIpSettingsComment": "and IP addresses follow a convention",
             "vmIpAddresses": "10.0.0.10 10.0.0.11 10.0.0.12",
@@ -136,6 +137,7 @@
         "storageAccountGroupM": {
             "storageAccountCount": 1,
             "vmsPerStorageAccount": 4,
+            "couchbaseRamQuota": 22900,
             "vmSize": "Standard_A6",
             "usingStaticIpSettingsComment": "and IP addresses follow a convention",
             "vmIpAddresses": "10.0.0.10 10.0.0.11 10.0.0.12 10.0.0.13",
@@ -153,6 +155,7 @@
         "storageAccountGroupL": {
             "storageAccountCount": 5,
             "vmsPerStorageAccount": 1,
+            "couchbaseRamQuota": 91750,
             "vmSize": "Standard_D14",
             "usingStaticIpSettingsComment": "and IP addresses follow a convention",
             "vmIpAddresses": "10.0.0.10 10.0.1.10 10.0.2.10 10.0.3.10 10.0.4.10",
@@ -297,6 +300,9 @@
                 },
                 "cbPackage": {
                     "value": "[parameters('cbPackage')]"
+                },
+                "cbRamQuota": {
+                    "value": "[variables('storageAccountGroup').couchbaseRamQuota]"
                 }
             }
         }
