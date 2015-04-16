@@ -114,7 +114,7 @@
         "clusterTshirtSizeS": {
             "storageAccountCount": 1,
             "clusterSize": 3,
-            "couchbaseRamQuota": 2800,
+            "couchbaseRamQuota": 2700,
             "vmSize": "Standard_A2",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 4,
             "vmTemplate": "[concat(variables('baseUrl'), 'cluster-nodes-A2.json')]",
@@ -129,7 +129,7 @@
         "clusterTshirtSizeM": {
             "storageAccountCount": 1,
             "clusterSize": 4,
-            "couchbaseRamQuota": 22900,
+            "couchbaseRamQuota": 22000,
             "vmSize": "Standard_A6",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 8,
             "vmTemplate": "[concat(variables('baseUrl'), 'cluster-nodes-A6.json')]",
@@ -146,7 +146,7 @@
         "clusterTshirtSizeL": {
             "storageAccountCount": 5,
             "clusterSize": 5,
-            "couchbaseRamQuota": 91750,
+            "couchbaseRamQuota": 88000,
             "vmSize": "Standard_D14",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 32,
             "vmTemplate": "[concat(variables('baseUrl'), 'cluster-nodes-D14.json')]",
