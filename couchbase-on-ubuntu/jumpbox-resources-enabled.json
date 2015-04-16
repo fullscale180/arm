@@ -53,6 +53,7 @@
         "vmStorageAccountContainerName": "vhd",
         "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
         "sourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
+        "winSourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/a699494373c04fc0bc8f2bb1389d6106__Windows-Server-Technical-Preview-201504.01-en.us-127GB.vhd')]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('subnetName'))]",
         "vmSize": "Standard_A0",
@@ -121,6 +122,78 @@
             "storageProfile": {
                 "sourceImage": {
                     "id": "[variables('sourceImageName')]"
+                },
+                "destinationVhdsContainer": "[concat('https://' ,variables('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
+            },
+            "networkProfile": {
+                "networkInterfaces": [{
+                    "id": "[resourceId('Microsoft.Network/networkInterfaces','nicJumpbox')]"
+                }],
+                "inputEndpoints": [{
+                    "enableDirectServerReturn": "False",
+                    "endpointName": "SSH",
+                    "privatePort": 22,
+                    "publicPort": 22,
+                    "protocol": "tcp"
+                }]
+            }
+        }
+    },
+    {
+        "apiVersion": "2014-12-01-preview",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "publicIPWin",
+        "location": "[parameters('targetRegion')]",
+        "properties": {
+            "publicIPAllocationMethod": "Dynamic"
+        }
+    }, {
+        "apiVersion": "2014-12-01-preview",
+        "type": "Microsoft.Network/networkInterfaces",
+        "name": "nicWin",
+        "location": "[parameters('targetRegion')]",
+        "dependsOn": [
+            "[concat('Microsoft.Network/publicIPAddresses/', 'publicIPWin')]"
+        ],
+        "properties": {
+            "ipConfigurations": [{
+                "name": "ipconfig1",
+                "properties": {
+                    "privateIPAllocationMethod": "Dynamic",
+                    "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses','publicIPWin')]"
+                    },
+                    "subnet": {
+                        "id": "[variables('subnetRef')]"
+                    }
+                }
+            }]
+        }
+    }, {
+        "apiVersion": "2014-12-01-preview",
+        "type": "Microsoft.Compute/virtualMachines",
+        "name": "windows",
+        "location": "[parameters('targetRegion')]",
+        "dependsOn": [
+            "[concat('Microsoft.Network/networkInterfaces/', 'nicWin')]",
+            "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
+        ],
+        "properties": {
+            "hardwareProfile": {
+                "vmSize": "[variables('vmSize')]",
+                "platformGuestAgent": "true"
+            },
+            "osProfile": {
+                "computername": "[concat(parameters('computerNamePrefix'), 'win')]",
+                "adminUsername": "[parameters('adminUsername')]",
+                "adminPassword": "[parameters('adminPassword')]",
+                "linuxOperatingSystemProfile": {
+                    "disableSshPasswordAuthentication": "false"
+                }
+            },
+            "storageProfile": {
+                "sourceImage": {
+                    "id": "[variables('winSourceImageName')]"
                 },
                 "destinationVhdsContainer": "[concat('https://' ,variables('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
             },
