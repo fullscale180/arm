@@ -170,7 +170,7 @@
                 "[variables('cbPackageDownloadLink')]",
                 "[concat(variables('baseUrl'), 'vm-disk-utils-0.1.sh')]"
             ],
-            "commandToExecute": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -pn ', parameters('cbPackage'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSize), ' -a ', parameters('adminUsername'), ' -pw ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota)]",
+            "commandToExecute": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -pn ', parameters('cbPackage'))]",
             "commandToExecuteForFirstMember": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -pn ', parameters('cbPackage'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSize), ' -a ', parameters('adminUsername'), ' -pw ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota, ' -l')]"
         },
         "clusterSpec": "[variables(concat('clusterTshirtSize', parameters('tshirtSize')))]"

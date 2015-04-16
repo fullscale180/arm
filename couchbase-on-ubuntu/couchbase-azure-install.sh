@@ -107,31 +107,50 @@ install_cb()
 	sudo dpkg -i ./$PACKAGE_NAME
 }
 
+# Expand a list of successive ip range and filter my local local ip from the list
+# Ip list is represented as a prefix and that is appended wiht a zero to N index
+# 10.0.0.1-3 would be converted to "10.0.0.10 10.0.0.11 10.0.0.12"
+expand_ip_range() {
+
+    echo "${EXPAND_STATICIP_RANGE_RESULTS[@]}"
+}
+
 DATA_DISKS="/datadisks"
-# Stripe all of the data disks
-bash ./vm-disk-utils-0.1.sh -b $DATA_DISKS -s
 
 DATA_MOUNTPOINT="$DATA_DISKS/disk1"
 
-install_cb
 
-MEMBER_IP_ADDRESSES=($IP_LIST)
-declare -a MY_IPS=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
+# If IP_LIST is non-empty, we are on the first node
+if [ "${IP_LIST}" -ne "" ]; then
 
-IS_FIRST_NODE=0
+    IFS='-' read -a HOST_IPS <<< "$IP_LIST"
 
-for (( i = 0; i < ${#MY_IPS[@]}; i++ )); do
-	if [ "${MY_IPS[$i]}" = "${MEMBER_IP_ADDRESSES[0]}" ]; then
-		IS_FIRST_NODE=1
+    #Get the IP Addresses on this machine
+    declare -a MY_IPS=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
+    MY_IP=""
+    declare -a MEMBER_IP_ADDRESSES=()
+    for (( n=0 ; n<("${HOST_IPS[1]}"+0) ; n++))
+    do
+        HOST="${HOST_IPS[0]}${n}"
+        if ! [[ "${MY_IPS[@]}" =~ "${HOST}" ]]; then
+            MEMBER_IP_ADDRESSES+=($HOST)
+        else
+    		MY_IP="${HOST}"
+        fi
+    done
+
+	if [ "${IS_FIRST_NODE}" = 1 ]; then
+		/opt/couchbase/bin/couchbase-cli node-init -c "$MY_IP":8091 --node-init-data-path="${DATA_MOUNTPOINT}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
+		/opt/couchbase/bin/couchbase-cli cluster-init -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --cluster-init-port=8091 --cluster-init-ramsize="${RAM_FOR_COUCHBASE}"
+		/opt/couchbase/bin/couchbase-cli setting-autofailover  -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --enable-auto-failover=1 --auto-failover-timeout=30
+
+		for (( i = 0; i < ${#MEMBER_IP_ADDRESSES[@]}; i++ )); do
+			/opt/couchbase/bin/couchbase-cli server-add -c "$MY_IP":8091   -u "${ADMINISTRATOR}" -p "${PASSWORD}" —server-add="${MEMBER_IP_ADDRESSES[$i]}" 
+		done
 	fi
-done
+else
+	# Stripe all of the data disks
+	bash ./vm-disk-utils-0.1.sh -b $DATA_DISKS -s
 
-if [ "${IS_FIRST_NODE}" = 1 ]; then
-	/opt/couchbase/bin/couchbase-cli node-init -c "${MEMBER_IP_ADDRESSES[0]}":8091 --node-init-data-path="${DATA_MOUNTPOINT}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
-	/opt/couchbase/bin/couchbase-cli cluster-init -c "${MEMBER_IP_ADDRESSES[0]}":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --cluster-init-port=8091 --cluster-init-ramsize="${RAM_FOR_COUCHBASE}"
-	/opt/couchbase/bin/couchbase-cli setting-autofailover  -c "${MEMBER_IP_ADDRESSES[0]}":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --enable-auto-failover=1 --auto-failover-timeout=30
-
-	for (( i = 1; i < ${#MEMBER_IP_ADDRESSES[@]}; i++ )); do
-		/opt/couchbase/bin/couchbase-cli server-add -c "${MEMBER_IP_ADDRESSES[0]}":8091   -u "${ADMINISTRATOR}" -p "${PASSWORD}" —server-add="${MEMBER_IP_ADDRESSES[$i]}" 
-	done
+	install_cb
 fi
