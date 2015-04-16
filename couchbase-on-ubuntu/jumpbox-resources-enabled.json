@@ -180,7 +180,7 @@
         ],
         "properties": {
             "hardwareProfile": {
-                "vmSize": "[variables('vmSize')]",
+                "vmSize": "Standard_A1",
                 "platformGuestAgent": "true"
             },
             "osProfile": {

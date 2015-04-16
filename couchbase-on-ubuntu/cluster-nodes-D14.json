@@ -80,8 +80,10 @@
     "subnetRef": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('subnet').vnet), '/subnets/', parameters('subnet').name)]",
     "dataDiskSize": 1023,
     "storageAccountSuffixFor0": "0",
-    "storageAccountSuffixFor1": "0",
-    "storageAccountSuffixFor2": "0",
+    "storageAccountSuffixFor1": "1",
+    "storageAccountSuffixFor2": "2",
+    "storageAccountSuffixFor1": "3",
+    "storageAccountSuffixFor2": "4"
   },
   "resources": [{
     "apiVersion": "2014-12-01-preview",

@@ -82,6 +82,7 @@
     "storageAccountSuffixFor0": "0",
     "storageAccountSuffixFor1": "0",
     "storageAccountSuffixFor2": "0",
+    "storageAccountSuffixFor3": "0"
   },
   "resources": [{
     "apiVersion": "2014-12-01-preview",
