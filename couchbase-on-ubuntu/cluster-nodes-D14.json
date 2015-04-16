@@ -383,7 +383,7 @@
       "type": "CustomScriptForLinux",
       "typeHandlerVersion": "1.2",
       "settings": {
-        "fileUris": [],
+        "fileUris": "[parameters('vmScripts').scriptsToDownload]",
         "commandToExecute": "[parameters('vmScripts').commandToExecute]"
       }
     }
