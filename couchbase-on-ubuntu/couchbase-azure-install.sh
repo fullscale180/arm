@@ -36,17 +36,21 @@ fi
 #Script Parameters
 CLUSTER_NAME="couchbase"
 PACKAGE_NAME="couchbase-server-enterprise_3.0.3-ubuntu12.04_amd64.deb"
+IP_LIST=""
 
 #Loop through options passed
 while getopts :n:p: optname; do
     log "Option $optname set with value ${OPTARG}"
   case $optname in
-    n)  #set clsuter name
+    n)  #set cluster name
       CLUSTER_NAME=${OPTARG}
       ;;
-    p) #Static dicovery endpoints
+    p) #Couchbase package name
       PACKAGE_NAME=${OPTARG}
       ;;
+    i) #Static IPs of the cluster members
+      IP_LIST=${OPTARG}
+      ;;      
   esac
 done
 
