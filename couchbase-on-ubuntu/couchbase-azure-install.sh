@@ -34,36 +34,15 @@ else
 fi
 
 #Script Parameters
-CLUSTER_NAME="couchbase"
 PACKAGE_NAME="couchbase-server-enterprise_3.0.3-ubuntu12.04_amd64.deb"
-IP_LIST=""
-ADMINISTRATOR="couchbaseadmin"
-PASSWORD="P@ssword1"
-# Minimum VM size we are assuming is A2, which has 3.5GB, 2800MB is about 80% as recommended
-RAM_FOR_COUCHBASE=2800
 
 #Loop through options passed
-while getopts :n:pn:i:a:pw:r: optname; do
+while getopts :pn: optname; do
     log "Option $optname set with value ${OPTARG}"
   case $optname in
-    n)  #set cluster name
-      CLUSTER_NAME=${OPTARG}
-      ;;
     pn) #Couchbase package name
       PACKAGE_NAME=${OPTARG}
       ;;
-    i) #Static IPs of the cluster members
-      IP_LIST=${OPTARG}
-      ;;    
-    a) #Static IPs of the cluster members
-      ADMINISTRATOR=${OPTARG}
-      ;; 
-	pw) #Static IPs of the cluster members
-	  PASSWORD=${OPTARG}
-	  ;;         
-	r) #Static IPs of the cluster members
-	  RAM_FOR_COUCHBASE=${OPTARG}
-	  ;;         	  
   esac
 done
 

@@ -35,7 +35,6 @@ fi
 
 #Script Parameters
 CLUSTER_NAME="couchbase"
-PACKAGE_NAME="couchbase-server-enterprise_3.0.3-ubuntu12.04_amd64.deb"
 IP_LIST=""
 ADMINISTRATOR="couchbaseadmin"
 PASSWORD="P@ssword1"
@@ -43,14 +42,11 @@ PASSWORD="P@ssword1"
 RAM_FOR_COUCHBASE=2800
 
 #Loop through options passed
-while getopts :n:pn:i:a:pw:r: optname; do
+while getopts :n:i:a:pw:r: optname; do
     log "Option $optname set with value ${OPTARG}"
   case $optname in
     n)  #set cluster name
       CLUSTER_NAME=${OPTARG}
-      ;;
-    pn) #Couchbase package name
-      PACKAGE_NAME=${OPTARG}
       ;;
     i) #Static IPs of the cluster members
       IP_LIST=${OPTARG}
@@ -91,13 +87,11 @@ if [ "${IP_LIST}" -ne "" ]; then
         fi
     done
 
-	if [ "${IS_FIRST_NODE}" = 1 ]; then
-		/opt/couchbase/bin/couchbase-cli node-init -c "$MY_IP":8091 --node-init-data-path="${DATA_MOUNTPOINT}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
-		/opt/couchbase/bin/couchbase-cli cluster-init -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --cluster-init-port=8091 --cluster-init-ramsize="${RAM_FOR_COUCHBASE}"
-		/opt/couchbase/bin/couchbase-cli setting-autofailover  -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --enable-auto-failover=1 --auto-failover-timeout=30
+	/opt/couchbase/bin/couchbase-cli node-init -c "$MY_IP":8091 --node-init-data-path="${DATA_MOUNTPOINT}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
+	/opt/couchbase/bin/couchbase-cli cluster-init -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --cluster-init-port=8091 --cluster-init-ramsize="${RAM_FOR_COUCHBASE}"
+	/opt/couchbase/bin/couchbase-cli setting-autofailover  -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --enable-auto-failover=1 --auto-failover-timeout=30
 
-		for (( i = 0; i < ${#MEMBER_IP_ADDRESSES[@]}; i++ )); do
-			/opt/couchbase/bin/couchbase-cli server-add -c "$MY_IP":8091   -u "${ADMINISTRATOR}" -p "${PASSWORD}" —server-add="${MEMBER_IP_ADDRESSES[$i]}" 
-		done
-	fi
+	for (( i = 0; i < ${#MEMBER_IP_ADDRESSES[@]}; i++ )); do
+		/opt/couchbase/bin/couchbase-cli server-add -c "$MY_IP":8091   -u "${ADMINISTRATOR}" -p "${PASSWORD}" —server-add="${MEMBER_IP_ADDRESSES[$i]}" 
+	done
 fi

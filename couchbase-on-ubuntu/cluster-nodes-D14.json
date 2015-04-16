@@ -384,7 +384,7 @@
       "typeHandlerVersion": "1.2",
       "settings": {
         "fileUris": "[parameters('vmScripts').scriptsToDownload]",
-        "commandToExecute": "[parameters('vmScripts').commandToExecute]"
+        "commandToExecute": "[parameters('vmScripts').couchbaseInstallCommand]"
       }
     }
   }, {
@@ -401,7 +401,7 @@
       "typeHandlerVersion": "1.2",
       "settings": {
         "fileUris": [],
-        "commandToExecute": "[parameters('vmScripts').commandToExecuteForFirstMember]"
+        "commandToExecute": "[parameters('vmScripts').couchbaseSetupCommand]"
       }
     }
   }]
