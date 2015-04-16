@@ -59,6 +59,7 @@ install_cb()
 {
 	# First prepare the environment as per http://blog.couchbase.com/often-overlooked-linux-os-tweaks
 
+	log "Disable swappiness"
 	# We may not reboot, disable with the running system
 	# Set the value for the running system
 	echo 0 > /proc/sys/vm/swappiness
@@ -71,6 +72,7 @@ install_cb()
 	echo '#Set swappiness to 0 to avoid swapping' >> /etc/sysctl.conf
 	echo 'vm.swappiness = 0' >> /etc/sysctl.conf
 
+	log "Disable THP"
 	# Disble THP
 	# We may not reboot yet, so disable for this time first
 	# Disable THP on a running system
@@ -88,8 +90,7 @@ install_cb()
 		\n' /etc/rc.local
 	
 
-    log "Installing Couchbase package - $PACKAGE_NAME"
-
+    log "Installing Couchbase package - $PACKAGE_NAME"    
 	sudo dpkg -i ./$PACKAGE_NAME
 }
 
@@ -97,7 +98,7 @@ DATA_DISKS="/datadisks"
 # Stripe all of the data disks
 bash ./vm-disk-utils-0.1.sh -b $DATA_DISKS -s
 
-DATA_DIRECTORY="$DATA_DISKS/couchbase"
-
+DATA_DIRECTORY="$DATA_DISKS/disk1/couchbase"
 
 install_cb
+

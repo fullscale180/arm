@@ -111,7 +111,7 @@
         "[variables('cbPackageDownloadLink')]",
         "https://raw.githubusercontent.com/azurermtemplates/azurermtemplates/master/shared_scripts/ubuntu/vm-disk-utils-0.1.sh"
       ],
-      "commandToExecute": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -p ', parameters('cbPackage'), ' -i ', parameters('nodesIpPrefix'), '0-', parameters('nodeCountPerStorageAccount'))]"
+      "commandToExecute": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -p ', parameters('cbPackage'), ' -i ', parameters('vmIpAddresses'))]"
     }
   },
   "resources": [{
@@ -171,9 +171,6 @@
         },
         "nodesIpPrefix": {
           "value": "[parameters('nodesIpPrefix')]"
-        },
-        "vmIpAddresses": {
-          "value": "[parameters('vmIpAddresses')]"
         },
         "vmSize": {
           "value": "[parameters('vmSize')]"
