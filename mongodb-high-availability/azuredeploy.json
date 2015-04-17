@@ -1,0 +1,252 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "adminUsername": {
+            "type": "string",
+            "metadata": {
+                "Description": "Administrator user name used when provisioning virtual machines"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "Description": "Administrator password used when provisioning virtual machines"
+            }
+        },
+        "storageAccountName": {
+            "type": "string",
+            "defaultValue": "uniqueStorageAccountName",
+            "metadata": {
+                "Description": "Unique namespace for the Storage Account where the Virtual Machine's disks will be placed"
+            }
+        },
+        "region": {
+            "type": "string",
+            "defaultValue": "West US",
+            "metadata": {
+                "Description": "Location where resources will be provisioned"
+            }
+        },
+        "virtualNetworkName": {
+            "type": "string",
+            "defaultValue": "myVNET",
+            "metadata": {
+                "Description": "The arbitrary name of the virtual network provisioned for the cluster"
+            }
+        },
+        "addressPrefix": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/16",
+            "metadata": {
+                "Description": "The network address space for the virtual network"
+            }
+        },
+        "subnetName": {
+            "type": "string",
+            "defaultValue": "Subnet-1",
+            "metadata": {
+                "Description": "Subnet name for the virtual network that resources will be provisioned in to"
+            }
+        },
+        "subnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/24",
+            "metadata": {
+                "Description": "Address space for the virtual network subnet"
+            }
+        },
+        "mongodbVersion": {
+            "type": "string",
+            "defaultValue": "3.0.2",
+            "metadata": {
+                "Description": "The version of the MongoDB packages to be deployed"
+            }
+        },
+        "jumpbox": {
+            "type": "string",
+            "defaultValue": "Enabled",
+            "allowedValues": [
+                "Enabled",
+                "Disabled"
+            ],
+            "metadata": {
+                "Description": "The flag allowing to enable or disable provisioning of the jumpbox VM that can be used to access the MongoDB environment"
+            }
+        },
+        "tshirtSize": {
+            "type": "string",
+            "defaultValue": "XSmall",
+            "allowedValues": [
+                "XSmall",
+                "Small",
+                "Medium",
+                "Large",
+                "XLarge",
+                "XXLarge"
+            ],
+            "metadata": {
+                "Description": "T-shirt size of the MongoDB deployment"
+            }
+        },
+        "osFamily": {
+            "type": "string",
+            "defaultValue": "Ubuntu",
+            "allowedValues": [
+                "Ubuntu",
+                "CentOS"
+            ],
+            "metadata": {
+                "Description": "The target OS for the virtual machines running MongoDB"
+            }
+        }
+    },
+    "variables": {
+        "tshirtSizeXSmall": {
+            "vmSizeMember": "Standard_D1",
+            "vmSizeArbiter": "Standard_A1",
+            "numberOfMembers": 2,
+            "arbiter": "Enabled"
+        },
+        "tshirtSizeSmall": {
+            "vmSizeMember": "Standard_D1",
+            "vmSizeArbiter": "Standard_A1",
+            "numberOfMembers": 3,
+            "arbiter": "Disabled"
+        },
+        "tshirtSizeMedium": {
+            "vmSizeMember": "Standard_D2",
+            "vmSizeArbiter": "Standard_A1",
+            "numberOfMembers": 4,
+            "arbiter": "Enabled"
+        },
+        "tshirtSizeLarge": {
+            "vmSizeMember": "Standard_D2",
+            "vmSizeArbiter": "Standard_A1",
+            "numberOfMembers": 8,
+            "arbiter": "Enabled"
+        },
+        "tshirtSizeXLarge": {
+            "vmSizeMember": "Standard_D3",
+            "vmSizeArbiter": "Standard_A1",
+            "numberOfMembers": 16,
+            "arbiter": "Enabled"
+        },
+        "tshirtSizeXXLarge": {
+            "vmSizeMember": "Standard_D3",
+            "vmSizeArbiter": "Standard_A1",
+            "numberOfMembers": 51,
+            "arbiter": "Disabled"
+        },
+        "osFamilyUbuntu": {
+            "osName": "ubuntu",
+            "installerBaseUrl": "http://repo.mongodb.org/apt/ubuntu",
+            "installerPackages" : "mongodb-org"
+        },
+        "osFamilyCentOS": {
+            "osName": "centos",
+            "installerBaseUrl": "http://downloads-distro.mongodb.org/repo/ubuntu-upstart",
+            "installerPackages" : "mongo-10gen mongo-10gen-server"
+        },
+        "vmStorageAccountContainerName": "vhd",
+        "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
+        "sourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
+        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+        "scriptUrl": "https://fs180.blob.core.windows.net/public/mongodb-high-availability/",
+        "templateBaseUrl": "[variables('scriptUrl')]",
+        "jumpboxTemplateEnabled": "jumpbox-resources.json",
+        "jumpboxTemplateDisabled": "empty-resources.json",
+        "arbiterTemplateEnabled": "arbiter-resources.json",
+        "arbiterTemplateDisabled": "empty-resources.json",
+        "sharedTemplateUrl": "[concat(variables('templateBaseUrl'), 'shared-resources.json')]",
+        "jumpboxTemplateUrl": "[concat(variables('templateBaseUrl'), variables(concat('jumpboxTemplate', parameters('jumpbox'))))]",
+        "arbiterTemplateUrl": "[concat(variables('templateBaseUrl'), variables(concat('arbiterTemplate', variables('arbiter'))))]",
+        "commonSettings": {
+            "availabilitySetName": "mongodbAvailSet",
+            "region": "[parameters('region')]"
+        },
+        "storageSettings": {
+            "vhdStorageAccountName": "[parameters('storageAccountName')]",
+            "vhdContainerName": "[variables('vmStorageAccountContainerName')]",
+            "destinationVhdsContainer": "[concat('https://', parameters('storageAccountName'),'.blob.core.windows.net/', variables('vmStorageAccountContainerName'), '/')]"
+        },
+        "networkSettings": {
+            "virtualNetworkName": "[parameters('virtualNetworkName')]",
+            "addressPrefix": "[parameters('addressPrefix')]",
+            "subnetName": "[parameters('subnetName')]",
+            "subnetPrefix": "[parameters('subnetPrefix')]",
+            "subnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]"
+        },
+        "machineSettings": {
+            "adminUsername": "[parameters('adminUsername')]",
+            "adminPassword": "[parameters('adminPassword')]",
+            "machineNamePrefix": "mongodb-",
+            "osImageName": "[variables('sourceImageName')]"
+        },
+        "clusterSpec": "[variables(concat('tshirtSize', parameters('tshirtSize')))]",
+        "osFamilySpec": "[variables(concat('osFamily', parameters('osFamily')))]",
+        "vmScripts": {
+            "scriptsToDownload": [
+                "[concat(variables('scriptUrl'), 'mongodb-', variables('osFamilySpec').osName, '-install.sh')]",
+                "[concat(variables('scriptUrl'), 'mongodb-', variables('osFamilySpec').osName, '-setup.sh')]",
+                "[concat(variables('scriptUrl'), 'vm-disk-utils-0.1.sh')]"
+            ],
+            "installCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-install.sh', ' -url ', variables('osFamilySpec').installerBaseUrl, ' -pn ', variables('osFamilySpec').installerPackages)]",
+            "setupCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-setup.sh', ' -ip ', concat(variables('nodesIpPrefix'), ' -user ', parameters('adminUsername'), ' -pwd ', parameters('adminPassword')))]"
+        }
+    },
+    "resources": [
+        {
+            "name": "shared-resources",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('sharedTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "commonSettings": {
+                        "value": "[variables('commonSettings')]"
+                    },
+                    "storageSettings": {
+                        "value": "[variables('storageSettings')]"
+                    },
+                    "networkSettings": {
+                        "value": "[variables('networkSettings')]"
+                    }
+                }
+            }
+        },
+        {
+            "name": "jumpbox-resources",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "[concat('Microsoft.Resources/deployments/', 'shared-resources')]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('jumpboxTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "commonSettings": {
+                        "value": "[variables('commonSettings')]"
+                    },
+                    "storageSettings": {
+                        "value": "[variables('storageSettings')]"
+                    },
+                    "networkSettings": {
+                        "value": "[variables('networkSettings')]"
+                    },
+                    "machineSettings": {
+                        "value": "[variables('machineSettings')]"
+                    }
+                }
+            }
+        }
+    ]
+}

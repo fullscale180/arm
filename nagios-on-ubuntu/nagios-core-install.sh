@@ -15,7 +15,7 @@ help()
 	echo "This script installs and configures Nagios Core on the Ubuntu virtual machine image"
 	echo "Available parameters:"
 	echo "-u Admin_User_Name"
-	echo "-u Admin_User_Password"
+	echo "-p Admin_User_Password"
 	echo "-v Core_Package_Version"
 }
 
@@ -36,10 +36,10 @@ then
 fi
 
 # Parse script parameters
-while getopts :u:p:v:h optname; do
+while getopts ":u:p:v:h" optname; do
   log "Option $optname set with value ${OPTARG}"
   
-  case $optname in
+  case "$optname" in
 	u) # Admin user name
 		ADMIN_USERNAME=${OPTARG}
 		;;

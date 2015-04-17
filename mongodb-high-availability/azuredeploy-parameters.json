@@ -1,9 +1,9 @@
 {
     "storageAccountName": {
-        "value": "armdeploy5"
+        "value": "armdeploy6"
     },
     "adminUsername": {
-        "value": "NagiosAdmin"
+        "value": "MongoAdmin"
     },
     "adminPassword": {
         "value": "J5zA3Fgxh8CrR9CcUHjNvGJ8A6xPPrxu"
@@ -12,7 +12,7 @@
         "value": "West US"
     },
     "virtualNetworkName": {
-        "value": "nagiosVnet"
+        "value": "mongodbVnet"
     },
     "subnetName": {
         "value": "Subnet1"
@@ -23,10 +23,13 @@
     "subnetPrefix": {
         "value": "10.0.0.0/24"
     },
-    "domainName": {
-        "value": "nagiosonazure"
+    "mongodbVersion": {
+        "value": "3.0.2"
+    },
+    "jumpbox": {
+        "value": "Enabled"
     },
     "tshirtSize":  {
-        "value": "Medium"
+        "value": "XSmall"
     }
 }
