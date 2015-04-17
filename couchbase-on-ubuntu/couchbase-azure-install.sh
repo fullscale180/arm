@@ -45,7 +45,7 @@ RAM_FOR_COUCHBASE=2800
 IS_LAST_NODE=0
 
 #Process the received arguments
-while getopts d:n:i:a:pw:r:l optname; do
+while getopts d:n:i:a:p:r:l optname; do
     log "Option $optname set with value ${OPTARG}"
   case $optname in
     d) #Couchbase package name
