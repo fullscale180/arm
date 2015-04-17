@@ -36,12 +36,12 @@ fi
 
 #Script Parameters
 PACKAGE_NAME="couchbase-server-enterprise_3.0.3-ubuntu12.04_amd64.deb"
-CLUSTER_NAME="couchbase"
+CLUSTER_NAME=""
 IP_LIST=""
-ADMINISTRATOR="couchbaseadmin"
-PASSWORD="P@ssword1"
+ADMINISTRATOR=""
+PASSWORD=""
 # Minimum VM size we are assuming is A2, which has 3.5GB, 2800MB is about 80% as recommended
-RAM_FOR_COUCHBASE=2800
+RAM_FOR_COUCHBASE=0
 IS_LAST_NODE=0
 
 #Process the received arguments
