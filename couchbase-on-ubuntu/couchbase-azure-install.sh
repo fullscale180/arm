@@ -50,31 +50,24 @@ while getopts d:n:i:a:pw:r:l optname; do
   case $optname in
     d) #Couchbase package name
       PACKAGE_NAME=${OPTARG}
-      log "Argument: Package name is ${PACKAGE_NAME}"
       ;;
     n)  #set cluster name
       CLUSTER_NAME=${OPTARG}
-      log "Argument: Cluster name is ${CLUSTER_NAME}"
       ;;
     i) #Static IPs of the cluster members
       IP_LIST=${OPTARG}
-      log "Argument: IP range is ${IP_LIST}"
       ;;    
     a) #Adminsitrator name
       ADMINISTRATOR=${OPTARG}
-      log "Argument: Administrator name is ${ADMINISTRATOR}"
       ;; 
 	p) #Password for the admin
 	  PASSWORD=${OPTARG}
-	  log "Argument: Password received"
 	  ;;         
 	r) #Recommended RAM amount
 	  RAM_FOR_COUCHBASE=${OPTARG}
-	  log "Argument: Recommended RAM is ${RAM_FOR_COUCHBASE}"
 	  ;;              
 	l) #is this for the last node?
 	  IS_LAST_NODE=1
-	  log "Argument: Last node processing"
 	  ;;        	  
   esac
 done

@@ -128,6 +128,7 @@
             "storageAccountCount": 1,
             "clusterSizeMinusOne": 2,
             "lastNodeId": 2,
+            "clusterSize": 3,
             "couchbaseRamQuota": 2700,
             "vmSize": "Standard_A2",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 4,
@@ -144,6 +145,7 @@
             "storageAccountCount": 1,
             "clusterSizeMinusOne": 3,
             "lastNodeId": 3,
+            "clusterSize": 4,
             "couchbaseRamQuota": 22000,
             "vmSize": "Standard_A6",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 8,
@@ -162,6 +164,7 @@
             "storageAccountCount": 5,
             "clusterSizeMinusOne": 4,
             "lastNodeId": 4,
+            "clusterSize": 5,
             "couchbaseRamQuota": 88000,
             "vmSize": "Standard_D14",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 32,
@@ -186,8 +189,8 @@
                 "[variables('cbPackageDownloadLink')]",
                 "[concat(variables('baseUrl'), 'vm-disk-utils-0.1.sh')]"
             ],
-            "couchbaseInstallCommand": "[concat('bash couchbase-azure-install.sh -d ', parameters('cbPackage'), ' -n ', parameters('cbClusterName'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSizeMinusOne), ' -a ', parameters('adminUsername'), ' -p ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota)]",
-            "couchbaseSetupCommand": "[concat('bash couchbase-azure-install.sh -d ', parameters('cbPackage'), ' -n ', parameters('cbClusterName'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSizeMinusOne), ' -a ', parameters('adminUsername'), ' -p ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota, ' -l')]"
+            "couchbaseInstallCommand": "[concat('bash couchbase-azure-install.sh -d ', parameters('cbPackage'), ' -n ', parameters('cbClusterName'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSize), ' -a ', parameters('adminUsername'), ' -p ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota)]",
+            "couchbaseSetupCommand": "[concat('bash couchbase-azure-install.sh -d ', parameters('cbPackage'), ' -n ', parameters('cbClusterName'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSize), ' -a ', parameters('adminUsername'), ' -p ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota, ' -l')]"
         },
         "clusterSpec": "[variables(concat('clusterTshirtSize', parameters('tshirtSize')))]"
     },
