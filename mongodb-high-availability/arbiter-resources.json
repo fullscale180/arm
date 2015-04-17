@@ -2,81 +2,47 @@
     "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "region": {
-            "type": "string",
-            "defaultValue": "West US",
+        "commonSettings": {
+            "type": "object",
             "metadata": {
-                "Description": "Location where resources will be provisioned"
+                "Description": "Common settings object"
             }
         },
-        "virtualNetworkName": {
-            "type": "string",
-            "defaultValue": "myVNET",
+        "storageSettings": {
+            "type": "object",
             "metadata": {
-                "Description": "The arbitrary name of the virtual network provisioned for the cluster"
+                "Description": "Storage settings object"
             }
         },
-        "subnetName": {
-            "type": "string",
-            "defaultValue": "Subnet-1",
+        "networkSettings": {
+            "type": "object",
             "metadata": {
-                "Description": "Subnet name for the virtual network that resources will be provisioned in to"
+                "Description": "Network settings object"
             }
         },
-        "storageAccountName": {
-            "type": "string",
-            "defaultValue": "uniqueStorageAccountName",
+        "machineSettings": {
+            "type": "object",
             "metadata": {
-                "Description": "Unique namespace for the Storage Account where the Virtual Machine's disks will be placed"
+                "Description": "Machine settings object"
             }
-        },
-        "adminUsername": {
-            "type": "string",
-            "metadata": {
-                "Description": "Administrator user name used when provisioning virtual machines"
-            }
-        },
-        "adminPassword": {
-            "type": "securestring",
-            "metadata": {
-                "Description": "Administrator password used when provisioning virtual machines"
-            }
-        },
-        "computerNamePrefix": {
-            "type": "string",
-            "metadata": {
-                "Description": "The global VM name prefix"
-            }
-        },
-        "vmSourceImageName": {
-            "type": "string",
-            "defaultValue": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
-            "metadata": {
-                "Description": "VM image name"
-            }
-        },
+        }
     },
     "variables": {
-        "vmStorageAccountContainerName": "vhd",
-        "sourceImageName": "[concat('/', subscription().subscriptionId, '/services/images/', parameters('vmSourceImageName'))]",
-        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-        "subnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]",
-        "vmSize": "Standard_A1"
     },
     "resources": [
         {
             "apiVersion": "2014-12-01-preview",
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "nicArbiter",
-            "location": "[parameters('region')]",
+            "name": "arbiterNIC",
+            "location": "[parameters('commonSettings').region]",
             "properties": {
                 "ipConfigurations": [
                     {
-                        "name": "ipconfig1",
+                        "name": "ipConfigArbiter",
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "subnet": {
-                                "id": "[variables('subnetRef')]"
+                                "id": "[parameters('networkSettings').subnetRef]"
                             }
                         }
                     }
@@ -86,34 +52,34 @@
         {
             "apiVersion": "2014-12-01-preview",
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "jumpbox",
-            "location": "[parameters('region')]",
+            "name": "arbiterVM",
+            "location": "[parameters('commonSettings').region]",
             "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/', 'nicArbiter')]"
+                "[concat('Microsoft.Network/networkInterfaces/', 'arbiterNIC')]"
             ],
             "properties": {
                 "hardwareProfile": {
-                    "vmSize": "[variables('vmSize')]",
+                    "vmSize": "[parameters('machineSettings').vmSize]",
                     "platformGuestAgent": "true"
                 },
                 "osProfile": {
-                    "computername": "[concat(parameters('computerNamePrefix'), 'arbiter')]",
-                    "adminUsername": "[parameters('adminUsername')]",
-                    "adminPassword": "[parameters('adminPassword')]",
+                    "computername": "[concat(parameters('machineSettings').machineNamePrefix, 'arbiter')]",
+                    "adminUsername": "[parameters('machineSettings').adminUsername]",
+                    "adminPassword": "[parameters('machineSettings').adminPassword]",
                     "linuxOperatingSystemProfile": {
                         "disableSshPasswordAuthentication": "false"
                     }
                 },
                 "storageProfile": {
                     "sourceImage": {
-                        "id": "[variables('sourceImageName')]"
+                        "id": "[parameters('machineSettings').osImageName]"
                     },
-                    "destinationVhdsContainer": "[concat('https://',parameters('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
+                    "destinationVhdsContainer": "[parameters('storageSettings').destinationVhdsContainer]"
                 },
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces','nicArbiter')]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces','arbiterNIC')]"
                         }
                     ],
                     "inputEndpoints": [

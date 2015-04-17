@@ -20,10 +20,12 @@ The template expects the following parameters:
 | subnetName | Name of the Virtual Network subnet |
 | addressPrefix | The IP address mask used by the Virtual Network |
 | subnetPrefix | The subnet mask used by the Virtual Network subnet |
-| mongodbVersion | The version of the MongoDB packages to be deployed |
 | jumpbox | The flag allowing to enable or disable provisioning of the jumpbox VM |
 | tshirtSize | The t-shirt size of the MongoDB deployment (XSmall, Small, Medium, Large, XLarge, XXLarge) |
 | osFamily | The target OS for the virtual machines running MongoDB (Ubuntu or CentOS) |
+| mongodbVersion | The version of the MongoDB packages to be deployed |
+| replicaSetName | The name of the MongoDB replica set |
+| replicaSetKey | The shared key for the MongoDB replica set (6-1024 characters) |
 
 Topology
 --------

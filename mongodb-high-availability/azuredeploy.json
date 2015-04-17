@@ -56,13 +56,6 @@
                 "Description": "Address space for the virtual network subnet"
             }
         },
-        "mongodbVersion": {
-            "type": "string",
-            "defaultValue": "3.0.2",
-            "metadata": {
-                "Description": "The version of the MongoDB packages to be deployed"
-            }
-        },
         "jumpbox": {
             "type": "string",
             "defaultValue": "Enabled",
@@ -98,6 +91,25 @@
             ],
             "metadata": {
                 "Description": "The target OS for the virtual machines running MongoDB"
+            }
+        },
+        "mongodbVersion": {
+            "type": "string",
+            "defaultValue": "3.0.2",
+            "metadata": {
+                "Description": "The version of the MongoDB packages to be deployed"
+            }
+        },
+        "replicaSetName": {
+            "type": "string",
+            "metadata": {
+                "Description": "The name of the MongoDB replica set"
+            }
+        },
+        "replicaSetKey": {
+            "type": "string",
+            "metadata": {
+                "Description": "The shared key for the MongoDB replica set"
             }
         }
     },
@@ -141,12 +153,12 @@
         "osFamilyUbuntu": {
             "osName": "ubuntu",
             "installerBaseUrl": "http://repo.mongodb.org/apt/ubuntu",
-            "installerPackages" : "mongodb-org"
+            "installerPackages": "mongodb-org"
         },
         "osFamilyCentOS": {
             "osName": "centos",
             "installerBaseUrl": "http://downloads-distro.mongodb.org/repo/ubuntu-upstart",
-            "installerPackages" : "mongo-10gen mongo-10gen-server"
+            "installerPackages": "mongo-10gen mongo-10gen-server"
         },
         "vmStorageAccountContainerName": "vhd",
         "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
@@ -160,7 +172,7 @@
         "arbiterTemplateDisabled": "empty-resources.json",
         "sharedTemplateUrl": "[concat(variables('templateBaseUrl'), 'shared-resources.json')]",
         "jumpboxTemplateUrl": "[concat(variables('templateBaseUrl'), variables(concat('jumpboxTemplate', parameters('jumpbox'))))]",
-        "arbiterTemplateUrl": "[concat(variables('templateBaseUrl'), variables(concat('arbiterTemplate', variables('arbiter'))))]",
+        "arbiterTemplateUrl": "[concat(variables('templateBaseUrl'), variables(concat('arbiterTemplate', variables('clusterSpec').arbiter)))]",
         "commonSettings": {
             "availabilitySetName": "mongodbAvailSet",
             "region": "[parameters('region')]"
@@ -175,7 +187,8 @@
             "addressPrefix": "[parameters('addressPrefix')]",
             "subnetName": "[parameters('subnetName')]",
             "subnetPrefix": "[parameters('subnetPrefix')]",
-            "subnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]"
+            "subnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]",
+            "machineIpPrefix": "10.0.0.1"
         },
         "machineSettings": {
             "adminUsername": "[parameters('adminUsername')]",
@@ -192,7 +205,7 @@
                 "[concat(variables('scriptUrl'), 'vm-disk-utils-0.1.sh')]"
             ],
             "installCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-install.sh', ' -url ', variables('osFamilySpec').installerBaseUrl, ' -pn ', variables('osFamilySpec').installerPackages)]",
-            "setupCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-setup.sh', ' -ip ', concat(variables('nodesIpPrefix'), ' -user ', parameters('adminUsername'), ' -pwd ', parameters('adminPassword')))]"
+            "setupCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-setup.sh', ' -ip ', concat(variables('networkSettings').machineIpPrefix, ' -user ', parameters('adminUsername'), ' -pwd ', parameters('adminPassword'), ' -rsname ', parameters('replicaSetName'), ' -rskey ', parameters('replicaSetKey')))]"
         }
     },
     "resources": [
@@ -244,6 +257,41 @@
                     },
                     "machineSettings": {
                         "value": "[variables('machineSettings')]"
+                    }
+                }
+            }
+        },
+        {
+            "name": "arbiter-resources",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "[concat('Microsoft.Resources/deployments/', 'shared-resources')]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('arbiterTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "commonSettings": {
+                        "value": "[variables('commonSettings')]"
+                    },
+                    "storageSettings": {
+                        "value": "[variables('storageSettings')]"
+                    },
+                    "networkSettings": {
+                        "value": "[variables('networkSettings')]"
+                    },
+                    "machineSettings": {
+                        "value": {
+                            "adminUsername": "[variables('machineSettings').adminUsername]",
+                            "adminPassword": "[variables('machineSettings').adminPassword]",
+                            "machineNamePrefix": "[variables('machineSettings').machineNamePrefix]",
+                            "osImageName": "[variables('machineSettings').osImageName]",
+                            "vmSize": "[variables('clusterSpec').vmSizeArbiter]"
+                        }
                     }
                 }
             }
