@@ -177,157 +177,129 @@
         "clusterSpec": "[variables(concat('clusterTshirtSize', parameters('tshirtSize')))]"
     },
     "resources": [{
-            "name": "shared-resources",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2015-01-01",
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[concat(variables('baseUrl'), 'shared-resources.json')]",
-                    "contentVersion": "1.0.0.0"
-                },
-                "parameters": {
-                    "targetRegion": {
-                        "value": "[parameters('targetRegion')]"
-                    },
-                    "networkSettings": {
-                        "value": "[variables('networkSettings')]"
-                    },
-                    "cbClusterAvailabilitySetName": {
-                        "value": "[variables('cbClusterAvailabilitySetName')]"
-                    },
-                    "storageAccountNamePrefix": {
-                        "value": "[parameters('storageAccountNamePrefix')]"
-                    }
-                }
-            }
-        }, {
-            "name": "[concat(parameters('storageAccountNamePrefix'), copyindex())]",
-            "type": "Microsoft.Storage/storageAccounts",
-            "apiVersion": "2014-12-01-preview",
-            "dependsOn": ["[concat('Microsoft.Resources/deployments/', 'shared-resources')]"],
-            "location": "[parameters('targetRegion')]",
-            "copy": {
-                "name": "storageAccountsLoop",
-                "count": "[variables('clusterSpec').storageAccountCount]"
+        "name": "shared-resources",
+        "type": "Microsoft.Resources/deployments",
+        "apiVersion": "2015-01-01",
+        "properties": {
+            "mode": "Incremental",
+            "templateLink": {
+                "uri": "[concat(variables('baseUrl'), 'shared-resources.json')]",
+                "contentVersion": "1.0.0.0"
             },
-            "properties": {
-                "accountType": "Standard_LRS"
-            }
-        }, {
-            "name": "cluster-nodes",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2015-01-01",
-            "dependsOn": [
-                "storageAccountsLoop"
-            ],
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[variables('clusterSpec').vmTemplate]",
-                    "contentVersion": "1.0.0.0"
+            "parameters": {
+                "targetRegion": {
+                    "value": "[parameters('targetRegion')]"
                 },
-                "parameters": {
-                    "adminUsername": {
-                        "value": "[parameters('adminUsername')]"
-                    },
-                    "adminPassword": {
-                        "value": "[parameters('adminPassword')]"
-                    },
-                    "targetRegion": {
-                        "value": "[parameters('targetRegion')]"
-                    },
-                    "tshirtSize": {
-                        "value": "[parameters('tshirtSize')]"
-                    },
-                    "subnet": {
-                        "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
-                    },
-                    "availabilitySet": {
-                        "value": "[variables('cbClusterAvailabilitySetName')]"
-                    },
-                    "storageAccountPrefix": {
-                        "value": "[parameters('storageAccountNamePrefix')]"
-                    },
-                    "sourceImage": {
-                        "value": "[variables('sourceImage')]"
-                    },
-                    "nodeCount": {
-                        "value": "[variables('clusterSpec').clusterSize]"
-                    },
-                    "nodesIpPrefix": {
-                        "value": "[variables('nodesIpPrefix')]"
-                    },
-                    "vmSize": {
-                        "value": "[variables('clusterSpec').vmSize]"
-                    },
-                    "vmScripts": {
-                        "value": "[variables('vmScripts')]"
-                    }
-                }
-            }
-        },
-        {
-            "name": "loadBalancerConfiguration",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2015-01-01",
-            "dependsOn": ["[concat('Microsoft.Resources/deployments/', 'cluster-nodes')]"],
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[concat(variables('baseUrl'), 'load-balancer.json')]",
-                    "contentVersion": "1.0.0.0"
+                "networkSettings": {
+                    "value": "[variables('networkSettings')]"
                 },
-                "parameters": {
-                    "targetRegion": {
-                        "value": "[parameters('targetRegion')]"
-                    },
-                    "subnet": {
-                        "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
-                    },
-                    "internalIp": {
-                        "value": "[variables('internalIp')]"
-                    },
-                    "clusterSpec": {
-                        "value": "[variables('clusterSpec')]"
-                    }
-                }
-            }
-        }, {
-            "name": "jumpbox-resources",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2015-01-01",
-            "dependsOn": [],
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[concat(variables('baseUrl'), variables('jumpboxTemplateName'), parameters('jumpbox'), '.json')]",
-                    "contentVersion": "1.0.0.0"
+                "cbClusterAvailabilitySetName": {
+                    "value": "[variables('cbClusterAvailabilitySetName')]"
                 },
-                "parameters": {
-                    "targetRegion": {
-                        "value": "[parameters('targetRegion')]"
-                    },
-                    "virtualNetworkName": {
-                        "value": "[parameters('virtualNetworkName')]"
-                    },
-                    "subnetName": {
-                        "value": "[variables('networkSettings').subnet.couchbaseSubnet.name]"
-                    },
-                    "storageAccountNamePrefix": {
-                        "value": "[parameters('storageAccountNamePrefix')]"
-                    },
-                    "adminUsername": {
-                        "value": "[parameters('adminUsername')]"
-                    },
-                    "adminPassword": {
-                        "value": "[parameters('adminPassword')]"
-                    },
-                    "computerNamePrefix": {
-                        "value": "[parameters('vmNamePrefix')]"
-                    }
+                "storageAccountNamePrefix": {
+                    "value": "[parameters('storageAccountNamePrefix')]"
                 }
             }
         }
-    ]
+    }, {
+        "name": "[concat(parameters('storageAccountNamePrefix'), copyindex())]",
+        "type": "Microsoft.Storage/storageAccounts",
+        "apiVersion": "2014-12-01-preview",
+        "dependsOn": ["[concat('Microsoft.Resources/deployments/', 'shared-resources')]"],
+        "location": "[parameters('targetRegion')]",
+        "copy": {
+            "name": "storageAccountsLoop",
+            "count": "[variables('clusterSpec').storageAccountCount]"
+        },
+        "properties": {
+            "accountType": "Standard_LRS"
+        }
+    }, {
+        "name": "cluster-nodes",
+        "type": "Microsoft.Resources/deployments",
+        "apiVersion": "2015-01-01",
+        "dependsOn": [
+            "storageAccountsLoop"
+        ],
+        "properties": {
+            "mode": "Incremental",
+            "templateLink": {
+                "uri": "[variables('clusterSpec').vmTemplate]",
+                "contentVersion": "1.0.0.0"
+            },
+            "parameters": {
+                "adminUsername": {
+                    "value": "[parameters('adminUsername')]"
+                },
+                "adminPassword": {
+                    "value": "[parameters('adminPassword')]"
+                },
+                "targetRegion": {
+                    "value": "[parameters('targetRegion')]"
+                },
+                "tshirtSize": {
+                    "value": "[parameters('tshirtSize')]"
+                },
+                "subnet": {
+                    "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
+                },
+                "availabilitySet": {
+                    "value": "[variables('cbClusterAvailabilitySetName')]"
+                },
+                "storageAccountPrefix": {
+                    "value": "[parameters('storageAccountNamePrefix')]"
+                },
+                "sourceImage": {
+                    "value": "[variables('sourceImage')]"
+                },
+                "nodeCount": {
+                    "value": "[variables('clusterSpec').clusterSize]"
+                },
+                "nodesIpPrefix": {
+                    "value": "[variables('nodesIpPrefix')]"
+                },
+                "vmSize": {
+                    "value": "[variables('clusterSpec').vmSize]"
+                },
+                "vmScripts": {
+                    "value": "[variables('vmScripts')]"
+                }
+            }
+        }
+    }, {
+        "name": "jumpbox-resources",
+        "type": "Microsoft.Resources/deployments",
+        "apiVersion": "2015-01-01",
+        "dependsOn": [],
+        "properties": {
+            "mode": "Incremental",
+            "templateLink": {
+                "uri": "[concat(variables('baseUrl'), variables('jumpboxTemplateName'), parameters('jumpbox'), '.json')]",
+                "contentVersion": "1.0.0.0"
+            },
+            "parameters": {
+                "targetRegion": {
+                    "value": "[parameters('targetRegion')]"
+                },
+                "virtualNetworkName": {
+                    "value": "[parameters('virtualNetworkName')]"
+                },
+                "subnetName": {
+                    "value": "[variables('networkSettings').subnet.couchbaseSubnet.name]"
+                },
+                "storageAccountNamePrefix": {
+                    "value": "[parameters('storageAccountNamePrefix')]"
+                },
+                "adminUsername": {
+                    "value": "[parameters('adminUsername')]"
+                },
+                "adminPassword": {
+                    "value": "[parameters('adminPassword')]"
+                },
+                "computerNamePrefix": {
+                    "value": "[parameters('vmNamePrefix')]"
+                }
+            }
+        }
+    }]
 }
