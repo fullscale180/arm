@@ -10,6 +10,7 @@
 log()
 {
     curl -X POST -H "content-type:text/plain" --data-binary "${HOSTNAME} - $1" https://logs-01.loggly.com/inputs/1ade465e-527c-40ab-a8b0-7c6f477af19a/tag/cb-extension,${HOSTNAME}
+    echo $1
 }
 
 log "Begin execution of couchbase script extension on ${HOSTNAME}"
@@ -35,14 +36,39 @@ fi
 
 #Script Parameters
 PACKAGE_NAME="couchbase-server-enterprise_3.0.3-ubuntu12.04_amd64.deb"
+CLUSTER_NAME="couchbase"
+IP_LIST=""
+ADMINISTRATOR="couchbaseadmin"
+PASSWORD="P@ssword1"
+# Minimum VM size we are assuming is A2, which has 3.5GB, 2800MB is about 80% as recommended
+RAM_FOR_COUCHBASE=2800
+IS_LAST_NODE=0
 
 #Loop through options passed
-while getopts :pn: optname; do
+while getopts :pn:n:i:a:pw:r:l optname; do
     log "Option $optname set with value ${OPTARG}"
   case $optname in
     pn) #Couchbase package name
       PACKAGE_NAME=${OPTARG}
       ;;
+    n)  #set cluster name
+      CLUSTER_NAME=${OPTARG}
+      ;;
+    i) #Static IPs of the cluster members
+      IP_LIST=${OPTARG}
+      ;;    
+    a) #Adminsitrator name
+      ADMINISTRATOR=${OPTARG}
+      ;; 
+	pw) #Password for the admin
+	  PASSWORD=${OPTARG}
+	  ;;         
+	r) #Recommended RAM amount
+	  RAM_FOR_COUCHBASE=${OPTARG}
+	  ;;              
+	l) #is this for the last node?
+	  IS_LAST_NODE=1
+	  ;;        	  
   esac
 done
 
@@ -100,4 +126,36 @@ mkdir -p "$COUCHBASE_DATA"
 chown -R couchbase:couchbase "$COUCHBASE_DATA"
 chmod 755 "$COUCHBASE_DATA"
 
+IFS='-' read -a HOST_IPS <<< "$IP_LIST"
+
+#Get the IP Addresses on this machine
+declare -a MY_IPS=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
+MY_IP=""
+declare -a MEMBER_IP_ADDRESSES=()
+for (( n=0 ; n<("${HOST_IPS[1]}"+0) ; n++))
+do
+  HOST="${HOST_IPS[0]}${n}"
+  if ! [[ "${MY_IPS[@]}" =~ "${HOST}" ]]; then
+      MEMBER_IP_ADDRESSES+=($HOST)
+  else
+		MY_IP="${HOST}"
+  fi
+done
+
+if [ "$IS_LAST_NODE" -eq 1 ]; then
+	log "Initializing the first node of the cluster on ${MY_IP}."
+	/opt/couchbase/bin/couchbase-cli node-init -c "$MY_IP":8091 --node-init-data-path="${COUCHBASE_DATA}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
+	log "Setting up cluster"
+	/opt/couchbase/bin/couchbase-cli cluster-init -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --cluster-init-port=8091 --cluster-init-ramsize="${RAM_FOR_COUCHBASE}"
+	log "Setting autofailover"
+	/opt/couchbase/bin/couchbase-cli setting-autofailover  -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --enable-auto-failover=1 --auto-failover-timeout=30
+
+	for (( i = 0; i < ${#MEMBER_IP_ADDRESSES[@]}; i++ )); do
+		log "Adding node ${MEMBER_IP_ADDRESSES[$i]} to cluster"
+		/opt/couchbase/bin/couchbase-cli server-add -c "$MY_IP":8091 -u "${ADMINISTRATOR}" -p "${PASSWORD}" --server-add="${MEMBER_IP_ADDRESSES[$i]}" 
+	done
+
+	log "Reblancing the cluster"
+	/opt/couchbase/bin/couchbase-cli rebalance -c "$MY_IP":8091 -u "${ADMINISTRATOR}" -p "${PASSWORD}"
+fi
 log "Install couchbase complete!"

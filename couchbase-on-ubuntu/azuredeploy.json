@@ -109,11 +109,25 @@
             }
         },
         "nodesIpPrefix": "10.0.0.1",
+
+        "storageAccountSuffixForNodeS0": "0",
+        "storageAccountSuffixForNodeS1": "0",
+        "storageAccountSuffixForNodeS2": "0",
+        "storageAccountSuffixForNodeM0": "0",
+        "storageAccountSuffixForNodeM1": "0",
+        "storageAccountSuffixForNodeM2": "0",
+        "storageAccountSuffixForNodeM3": "0",
+        "storageAccountSuffixForNodeL0": "0",
+        "storageAccountSuffixForNodeL1": "1",
+        "storageAccountSuffixForNodeL2": "2",
+        "storageAccountSuffixForNodeL3": "3",
+        "storageAccountSuffixForNodeL4": "4",
         "jumpboxTemplateName": "jumpbox-resources-",
         "baseUrl": "[concat('https://raw.githubusercontent.com/', variables('gituser'), '/', variables('gitrepo'), '/master/', variables('gitrepodir'), '/')]",
         "clusterTshirtSizeS": {
             "storageAccountCount": 1,
-            "clusterSize": 3,
+            "clusterSizeMinusOne": 2,
+            "lastNodeId": 2,
             "couchbaseRamQuota": 2700,
             "vmSize": "Standard_A2",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 4,
@@ -128,7 +142,8 @@
         },
         "clusterTshirtSizeM": {
             "storageAccountCount": 1,
-            "clusterSize": 4,
+            "clusterSizeMinusOne": 3,
+            "lastNodeId": 3,
             "couchbaseRamQuota": 22000,
             "vmSize": "Standard_A6",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 8,
@@ -145,7 +160,8 @@
         },
         "clusterTshirtSizeL": {
             "storageAccountCount": 5,
-            "clusterSize": 5,
+            "clusterSizeMinusOne": 4,
+            "lastNodeId": 4,
             "couchbaseRamQuota": 88000,
             "vmSize": "Standard_D14",
             "maxNumberOfDataDisksForVmSizeNotUsedButHereForReference": 32,
@@ -171,8 +187,8 @@
                 "[variables('cbPackageDownloadLink')]",
                 "[concat(variables('baseUrl'), 'vm-disk-utils-0.1.sh')]"
             ],
-            "couchbaseInstallCommand": "[concat('bash couchbase-azure-install.sh ', ' -pn ', parameters('cbPackage'))]",
-            "couchbaseSetupCommand": "[concat('bash couchbase-azure-setup.sh -n ', parameters('cbClusterName'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSize), ' -a ', parameters('adminUsername'), ' -pw ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota)]"
+            "couchbaseInstallCommand": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -pn ', parameters('cbPackage'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSizeMinusOne), ' -a ', parameters('adminUsername'), ' -pw ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota)]",
+            "couchbaseSetupCommand": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -pn ', parameters('cbPackage'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSizeMinusOne), ' -a ', parameters('adminUsername'), ' -pw ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota, ' -l')]"
         },
         "clusterSpec": "[variables(concat('clusterTshirtSize', parameters('tshirtSize')))]"
     },
@@ -215,11 +231,70 @@
             "accountType": "Standard_LRS"
         }
     }, {
-        "name": "cluster-nodes",
+        "name": "[concat('cluster-node', copyindex())]",
         "type": "Microsoft.Resources/deployments",
         "apiVersion": "2015-01-01",
         "dependsOn": [
             "storageAccountsLoop"
+        ],
+        "copy": {
+            "name": "clusterNodesLoop",
+            "count": "[variables('clusterSpec').clusterSizeMinusOne]"
+        },
+        "properties": {
+            "mode": "Incremental",
+            "templateLink": {
+                "uri": "[variables('clusterSpec').vmTemplate]",
+                "contentVersion": "1.0.0.0"
+            },
+            "parameters": {
+                "adminUsername": {
+                    "value": "[parameters('adminUsername')]"
+                },
+                "adminPassword": {
+                    "value": "[parameters('adminPassword')]"
+                },
+                "targetRegion": {
+                    "value": "[parameters('targetRegion')]"
+                },
+                "tshirtSize": {
+                    "value": "[parameters('tshirtSize')]"
+                },
+                "subnet": {
+                    "value": "[variables('networkSettings').subnet.couchbaseSubnet]"
+                },
+                "availabilitySet": {
+                    "value": "[variables('cbClusterAvailabilitySetName')]"
+                },
+                "storageAccountName": {
+                    "value": "[concat(parameters('storageAccountNamePrefix'), variables(concat('storageAccountSuffixForNode', parameters('tshirtSize'), copyindex())))]"
+                },
+                "sourceImage": {
+                    "value": "[variables('sourceImage')]"
+                },
+                "nodeId": {
+                    "value": "copyindex()"
+                },
+                "nodesIpPrefix": {
+                    "value": "[variables('nodesIpPrefix')]"
+                },
+                "vmSize": {
+                    "value": "[variables('clusterSpec').vmSize]"
+                },
+                "vmScripts": {
+                    "value": "[variables('vmScripts')]"
+                },
+                "commandToExecute": {
+                    "value": "[variables('vmScripts').couchbaseInstallCommand]"
+                }
+            }
+        }
+    }, {
+        "name": "last-cluster-node",
+        "type": "Microsoft.Resources/deployments",
+        "apiVersion": "2015-01-01",
+        "dependsOn": [
+            "clusterNodesLoop"
         ],
         "properties": {
             "mode": "Incremental",
@@ -246,14 +321,14 @@
                 "availabilitySet": {
                     "value": "[variables('cbClusterAvailabilitySetName')]"
                 },
-                "storageAccountPrefix": {
-                    "value": "[parameters('storageAccountNamePrefix')]"
+                "storageAccountName": {
+                    "value": "[concat(parameters('storageAccountNamePrefix'), variables(concat('storageAccountSuffixForNode', parameters('tshirtSize'), variables('clusterSpec').lastNodeId)))]"
                 },
                 "sourceImage": {
                     "value": "[variables('sourceImage')]"
                 },
-                "nodeCount": {
-                    "value": "[variables('clusterSpec').clusterSize]"
+                "nodeId": {
+                    "value": "[variables('clusterSpec').lastNodeId]"
                 },
                 "nodesIpPrefix": {
                     "value": "[variables('nodesIpPrefix')]"
@@ -263,10 +338,14 @@
                 },
                 "vmScripts": {
                     "value": "[variables('vmScripts')]"
+                },
+                "commandToExecute": {
+                    "value": "[variables('vmScripts').couchbaseSetupCommand]"
                 }
             }
         }
-    }, {
+    }
+    , {
         "name": "jumpbox-resources",
         "type": "Microsoft.Resources/deployments",
         "apiVersion": "2015-01-01",

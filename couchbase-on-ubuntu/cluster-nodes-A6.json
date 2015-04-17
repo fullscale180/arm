@@ -38,10 +38,10 @@
         "Description": "The availabilty set to use for the data nodes"
       }
     },
-    "storageAccountPrefix": {
+    "storageAccountName": {
       "type": "string",
       "metadata": {
-        "Description": "Prefix of storage account the VM is assigned to"
+        "Description": "Name of the storage account the VM is assigned to"
       }
     },
     "sourceImage": {
@@ -50,7 +50,7 @@
         "Description": "Source image for the VM"
       },
     },
-    "nodeCount": {
+    "nodeId": {
       "type": "int",
       "metadata": {
         "Description": "Number of cluster nodes per storage account. One storage account cannot support more than 40 disks."
@@ -66,39 +66,37 @@
       "type": "string",
       "metadata": {
         "Description": "Size of the VM"
-      },
+      }
     },
     "vmScripts": {
       "type": "object",
       "metadata": {
         "Description": "Sripts to download and run on the VM"
       }
+    },
+    "commandToExecute": {
+      "type": "string",
+      "metadata": {
+        "Description": "Command to run for the script extension."
+      }
     }
   },
   "variables": {
     "vmStorageAccountContainerName": "vhd",
     "subnetRef": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('subnet').vnet), '/subnets/', parameters('subnet').name)]",
-    "dataDiskSize": 1023,
-    "storageAccountSuffixFor0": "0",
-    "storageAccountSuffixFor1": "0",
-    "storageAccountSuffixFor2": "0",
-    "storageAccountSuffixFor3": "0"
+    "dataDiskSize": 1023
   },
   "resources": [{
     "apiVersion": "2014-12-01-preview",
     "type": "Microsoft.Network/networkInterfaces",
-    "name": "[concat('nic', copyindex())]",
+    "name": "[concat('nic', parameters('nodeId'))]",
     "location": "[parameters('targetRegion')]",
-    "copy": {
-      "name": "nicLoop",
-      "count": "[parameters('nodeCount')]"
-    },
     "properties": {
       "ipConfigurations": [{
         "name": "ipconfig1",
         "properties": {
           "privateIPAllocationMethod": "Static",
-          "privateIPAddress": "[concat(parameters('nodesIpPrefix'), copyindex())]",
+          "privateIPAddress": "[concat(parameters('nodesIpPrefix'), parameters('nodeId'))]",
           "subnet": {
             "id": "[variables('subnetRef')]"
           }
@@ -108,14 +106,10 @@
   }, {
     "apiVersion": "2014-12-01-preview",
     "type": "Microsoft.Compute/virtualMachines",
-    "name": "[concat('vm', copyindex())]",
+    "name": "[concat('vm', parameters('nodeId'))]",
     "location": "[parameters('targetRegion')]",
-    "copy": {
-      "name": "virtualMachineLoop",
-      "count": "[parameters('nodeCount')]"
-    },
     "dependsOn": [
-      "[concat('Microsoft.Network/networkInterfaces/', 'nic', copyindex())]"
+      "[concat('Microsoft.Network/networkInterfaces/', 'nic', parameters('nodeId'))]"
     ],
     "properties": {
       "availabilitySet": {
@@ -125,7 +119,7 @@
         "vmSize": "[parameters('vmSize')]"
       },
       "osProfile": {
-        "computername": "[concat('vm', copyIndex())]",
+        "computername": "[concat('vm', parameters('nodeId'))]",
         "adminUsername": "[parameters('adminUsername')]",
         "adminPassword": "[parameters('adminPassword')]"
       },
@@ -138,80 +132,74 @@
             "diskSizeGB": "[variables('dataDiskSize')]",
             "lun": 0,
             "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountPrefix'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex(),'dataDisk0' ,'.vhd')]"
+              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId'),'dataDisk0' ,'.vhd')]"
             }
           }, {
             "name": "datadisk1",
             "diskSizeGB": "[variables('dataDiskSize')]",
             "lun": 1,
             "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountPrefix'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk1','.vhd')]"
+              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId') ,'dataDisk1','.vhd')]"
             }
           }, {
             "name": "datadisk2",
             "diskSizeGB": "[variables('dataDiskSize')]",
             "lun": 2,
             "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountPrefix'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk2','.vhd')]"
+              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId') ,'dataDisk2','.vhd')]"
             }
           }, {
             "name": "datadisk3",
             "diskSizeGB": "[variables('dataDiskSize')]",
             "lun": 3,
             "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountPrefix'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk3','.vhd')]"
+              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId') ,'dataDisk3','.vhd')]"
             }
           }, {
             "name": "datadisk4",
             "diskSizeGB": "[variables('dataDiskSize')]",
             "lun": 4,
             "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountPrefix'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex(),'dataDisk4' ,'.vhd')]"
+              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId'),'dataDisk4' ,'.vhd')]"
             }
           }, {
             "name": "datadisk5",
             "diskSizeGB": "[variables('dataDiskSize')]",
             "lun": 5,
             "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountPrefix'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk5','.vhd')]"
+              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId') ,'dataDisk5','.vhd')]"
             }
           }, {
             "name": "datadisk6",
             "diskSizeGB": "[variables('dataDiskSize')]",
             "lun": 6,
             "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountPrefix'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk6','.vhd')]"
+              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId') ,'dataDisk6','.vhd')]"
             }
           }, {
             "name": "datadisk7",
             "diskSizeGB": "[variables('dataDiskSize')]",
             "lun": 7,
             "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountPrefix'), variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', copyindex() ,'dataDisk7','.vhd')]"
+              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId') ,'dataDisk7','.vhd')]"
             }
           }
-
-
         ],
-        "destinationVhdsContainer": "[concat('http://',parameters('storageAccountPrefix'),  variables(concat('storageAccountSuffixFor', copyindex())), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
+        "destinationVhdsContainer": "[concat('http://',parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
       },
       "networkProfile": {
         "networkInterfaces": [{
-          "id": "[resourceId('Microsoft.Network/networkInterfaces',concat('nic', copyindex()))]"
+          "id": "[resourceId('Microsoft.Network/networkInterfaces',concat('nic', parameters('nodeId')))]"
         }]
       }
     }
   }, {
     "type": "Microsoft.Compute/virtualMachines/extensions",
-    "name": "[concat('vm', copyindex(), '/installcouchbase')]",
+    "name": "[concat('vm', parameters('nodeId'), '/installcouchbase')]",
     "apiVersion": "2014-12-01-preview",
     "location": "[parameters('targetRegion')]",
-    "copy": {
-      "name": "virtualMachineExtensionsLoop",
-      "count": "[parameters('nodeCount')]"
-    },
     "dependsOn": [
-      "[concat('Microsoft.Compute/virtualMachines/', 'vm', copyindex())]"
+      "[concat('Microsoft.Compute/virtualMachines/', 'vm', parameters('nodeId'))]"
     ],
     "properties": {
       "publisher": "Microsoft.OSTCExtensions",
@@ -219,24 +207,7 @@
       "typeHandlerVersion": "1.2",
       "settings": {
         "fileUris": "[parameters('vmScripts').scriptsToDownload]",
-        "commandToExecute": "[parameters('vmScripts').couchbaseInstallCommand]"
-      }
-    }
-  }, {
-    "type": "Microsoft.Compute/virtualMachines/extensions",
-    "name": "[concat('vm0', '/configurecouchbase')]",
-    "apiVersion": "2014-12-01-preview",
-    "location": "[parameters('targetRegion')]",
-    "dependsOn": [
-      "virtualMachineExtensionsLoop"
-    ],
-    "properties": {
-      "publisher": "Microsoft.OSTCExtensions",
-      "type": "CustomScriptForLinux",
-      "typeHandlerVersion": "1.2",
-      "settings": {
-        "fileUris": [],
-        "commandToExecute": "[parameters('vmScripts').couchbaseSetupCommand]"
+        "commandToExecute": "[parameters('commandToExecute')]"
       }
     }
   }]
