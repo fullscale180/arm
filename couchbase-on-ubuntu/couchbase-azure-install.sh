@@ -144,6 +144,9 @@ done
 
 log "Is last node? ${IS_LAST_NODE}"
 if [ "$IS_LAST_NODE" -eq 1 ]; then
+	log "sleep for 2 minutes to wait the environment to stabilize"
+	sleep 2m
+
 	log "Initializing the first node of the cluster on ${MY_IP}."
 	/opt/couchbase/bin/couchbase-cli node-init -c "$MY_IP":8091 --node-init-data-path="${COUCHBASE_DATA}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
 	log "Setting up cluster"
