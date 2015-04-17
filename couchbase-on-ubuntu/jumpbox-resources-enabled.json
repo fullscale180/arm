@@ -53,7 +53,7 @@
         "vmStorageAccountContainerName": "vhd",
         "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
         "sourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
-        "winSourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/03f55de797f546a1b29d1b8d66be687a__Windows-8.1-Enterprise-x64-en.us-201410.01')]",
+        "winSourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/a699494373c04fc0bc8f2bb1389d6106__Windows-Server-2012-R2-201503.01-en.us-127GB.vhd')]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('subnetName'))]",
         "vmSize": "Standard_A0",
