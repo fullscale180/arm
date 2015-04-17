@@ -12,7 +12,7 @@ log()
     curl -X POST -H "content-type:text/plain" --data-binary "${HOSTNAME} - $1" https://logs-01.loggly.com/inputs/1ade465e-527c-40ab-a8b0-7c6f477af19a/tag/cb-extension,${HOSTNAME}
 }
 
-log "Begin execution of couchbase script extension on ${HOSTNAME}"
+log "Begin setting up couchbase on ${HOSTNAME}"
  
 if [ "${UID}" -ne 0 ];
 then
@@ -87,14 +87,19 @@ if [ -n "${IP_LIST}" ]; then
       fi
   done
 
+  log "Initializing the first node."
   /opt/couchbase/bin/couchbase-cli node-init -c "$MY_IP":8091 --node-init-data-path="${COUCHBASE_DATA}" -u "${ADMINISTRATOR}" -p "${PASSWORD}"
+  log "Setting up cluster"
   /opt/couchbase/bin/couchbase-cli cluster-init -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --cluster-init-port=8091 --cluster-init-ramsize="${RAM_FOR_COUCHBASE}"
+  log "Setting autofailover"
   /opt/couchbase/bin/couchbase-cli setting-autofailover  -c "$MY_IP":8091  -u "${ADMINISTRATOR}" -p "${PASSWORD}" --enable-auto-failover=1 --auto-failover-timeout=30
 
   for (( i = 0; i < ${#MEMBER_IP_ADDRESSES[@]}; i++ )); do
+    log "Adding node ${MEMBER_IP_ADDRESSES[$i]} to cluster"
     /opt/couchbase/bin/couchbase-cli server-add -c "$MY_IP":8091 -u "${ADMINISTRATOR}" -p "${PASSWORD}" --server-add="${MEMBER_IP_ADDRESSES[$i]}" 
   done
 
+  log "Reblancing the cluster"
   /opt/couchbase/bin/couchbase-cli rebalance -c "$MY_IP":8091 -u "${ADMINISTRATOR}" -p "${PASSWORD}"
  
 fi
