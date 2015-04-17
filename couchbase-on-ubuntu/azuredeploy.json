@@ -183,12 +183,11 @@
         "vmScripts": {
             "scriptsToDownload": [
                 "[concat(variables('baseUrl'), 'couchbase-azure-install.sh')]",
-                "[concat(variables('baseUrl'), 'couchbase-azure-setup.sh')]",
                 "[variables('cbPackageDownloadLink')]",
                 "[concat(variables('baseUrl'), 'vm-disk-utils-0.1.sh')]"
             ],
-            "couchbaseInstallCommand": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -pn ', parameters('cbPackage'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSizeMinusOne), ' -a ', parameters('adminUsername'), ' -pw ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota)]",
-            "couchbaseSetupCommand": "[concat('bash couchbase-azure-install.sh -n ', parameters('cbClusterName'), ' -pn ', parameters('cbPackage'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSizeMinusOne), ' -a ', parameters('adminUsername'), ' -pw ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota, ' -l')]"
+            "couchbaseInstallCommand": "[concat('bash couchbase-azure-install.sh -d ', parameters('cbPackage'), ' -n ', parameters('cbClusterName'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSizeMinusOne), ' -a ', parameters('adminUsername'), ' -p ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota)]",
+            "couchbaseSetupCommand": "[concat('bash couchbase-azure-install.sh -d ', parameters('cbPackage'), ' -n ', parameters('cbClusterName'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSizeMinusOne), ' -a ', parameters('adminUsername'), ' -p ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota, ' -l')]"
         },
         "clusterSpec": "[variables(concat('clusterTshirtSize', parameters('tshirtSize')))]"
     },
@@ -273,7 +272,7 @@
                     "value": "[variables('sourceImage')]"
                 },
                 "nodeId": {
-                    "value": "copyindex()"
+                    "value": "[copyindex()]"
                 },
                 "nodesIpPrefix": {
                     "value": "[variables('nodesIpPrefix')]"
