@@ -144,7 +144,7 @@ done
 
 log "Is last node? ${IS_LAST_NODE}"
 if [ "$IS_LAST_NODE" -eq 1 ]; then
-	log "sleep for 2 minutes to wait the environment to stabilize"
+	log "sleep for 2 minutes to wait for the environment to stabilize"
 	sleep 2m
 
 	log "Initializing the first node of the cluster on ${MY_IP}."
