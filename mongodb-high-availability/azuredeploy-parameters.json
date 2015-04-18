@@ -27,10 +27,10 @@
         "value": "3.0.2"
     },
     "jumpbox": {
-        "value": "Disabled"
+        "value": "Enabled"
     },
     "tshirtSize": {
-        "value": "XSmall"
+        "value": "Small"
     },
     "osFamily": {
         "value": "Ubuntu"
