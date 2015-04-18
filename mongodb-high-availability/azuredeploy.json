@@ -118,37 +118,54 @@
             "vmSizeMember": "Standard_D1",
             "vmSizeArbiter": "Standard_A1",
             "numberOfMembers": 2,
-            "arbiter": "Enabled"
+            "arbiter": "Enabled",
+            "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D1.json')]",
+            "storageAccountCount": 1
         },
         "tshirtSizeSmall": {
             "vmSizeMember": "Standard_D1",
             "vmSizeArbiter": "Standard_A1",
             "numberOfMembers": 3,
-            "arbiter": "Disabled"
+            "arbiter": "Disabled",
+            "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D1.json')]",
+            "storageAccountCount": 1,
+            "dataDiskSize": 100
         },
         "tshirtSizeMedium": {
             "vmSizeMember": "Standard_D2",
             "vmSizeArbiter": "Standard_A1",
             "numberOfMembers": 4,
-            "arbiter": "Enabled"
+            "arbiter": "Enabled",
+            "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D2.json')]",
+            "storageAccountCount": 1,
+            "dataDiskSize": 100
         },
         "tshirtSizeLarge": {
             "vmSizeMember": "Standard_D2",
             "vmSizeArbiter": "Standard_A1",
             "numberOfMembers": 8,
-            "arbiter": "Enabled"
+            "arbiter": "Enabled",
+            "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D2.json')]",
+            "storageAccountCount": 5,
+            "dataDiskSize": 100
         },
         "tshirtSizeXLarge": {
             "vmSizeMember": "Standard_D3",
             "vmSizeArbiter": "Standard_A1",
             "numberOfMembers": 16,
-            "arbiter": "Enabled"
+            "arbiter": "Enabled",
+            "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D3.json')]",
+            "storageAccountCount": 5,
+            "dataDiskSize": 100
         },
         "tshirtSizeXXLarge": {
             "vmSizeMember": "Standard_D3",
             "vmSizeArbiter": "Standard_A1",
             "numberOfMembers": 51,
-            "arbiter": "Disabled"
+            "arbiter": "Disabled",
+            "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D3.json')]",
+            "storageAccountCount": 5,
+            "dataDiskSize": 100
         },
         "osFamilyUbuntu": {
             "osName": "ubuntu",
@@ -160,7 +177,7 @@
             "installerBaseUrl": "http://downloads-distro.mongodb.org/repo/ubuntu-upstart",
             "installerPackages": "mongo-10gen mongo-10gen-server"
         },
-        "vmStorageAccountContainerName": "vhd",
+        "vmStorageAccountContainerName": "vhd-mongodb",
         "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
         "sourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
@@ -180,7 +197,8 @@
         "storageSettings": {
             "vhdStorageAccountName": "[parameters('storageAccountName')]",
             "vhdContainerName": "[variables('vmStorageAccountContainerName')]",
-            "destinationVhdsContainer": "[concat('https://', parameters('storageAccountName'),'.blob.core.windows.net/', variables('vmStorageAccountContainerName'), '/')]"
+            "destinationVhdsContainer": "[concat('https://', parameters('storageAccountName'),'.blob.core.windows.net/', variables('vmStorageAccountContainerName'), '/')]",
+            "storageAccountCount": "[variables('clusterSpec').storageAccountCount]"
         },
         "networkSettings": {
             "virtualNetworkName": "[parameters('virtualNetworkName')]",
@@ -204,7 +222,7 @@
                 "[concat(variables('scriptUrl'), 'mongodb-', variables('osFamilySpec').osName, '-setup.sh')]",
                 "[concat(variables('scriptUrl'), 'vm-disk-utils-0.1.sh')]"
             ],
-            "installCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-install.sh', ' -url ', variables('osFamilySpec').installerBaseUrl, ' -pn ', variables('osFamilySpec').installerPackages)]",
+            "installCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-install.sh', ' -url ', variables('osFamilySpec').installerBaseUrl, ' -package ', variables('osFamilySpec').installerPackages)]",
             "setupCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-setup.sh', ' -ip ', concat(variables('networkSettings').machineIpPrefix, ' -user ', parameters('adminUsername'), ' -pwd ', parameters('adminPassword'), ' -rsname ', parameters('replicaSetName'), ' -rskey ', parameters('replicaSetKey')))]"
         }
     },
@@ -257,6 +275,54 @@
                     },
                     "machineSettings": {
                         "value": "[variables('machineSettings')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[concat('memberNode', copyindex())]",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "[concat('Microsoft.Resources/deployments/', 'shared-resources')]"
+            ],
+            "copy": {
+                "name": "memberNodesLoop",
+                "count": "[variables('clusterSpec').numberOfMembers]"
+            },
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('clusterSpec').vmTemplate]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "commonSettings": {
+                        "value": "[variables('commonSettings')]"
+                    },
+                    "storageSettings": {
+                        "value": {
+                            "vhdStorageAccountName": "[variables('storageSettings').vhdStorageAccountName]",
+                            "vhdContainerName": "[variables('storageSettings').vhdContainerName]",
+                            "destinationVhdsContainer": "[variables('storageSettings').destinationVhdsContainer]",
+                            "storageAccountCount": "[variables('storageSettings').storageAccountCount]"
+                        }
+                    },
+                    "networkSettings": {
+                        "value": "[variables('networkSettings')]"
+                    },
+                    "machineSettings": {
+                        "value": {
+                            "adminUsername": "[variables('machineSettings').adminUsername]",
+                            "adminPassword": "[variables('machineSettings').adminPassword]",
+                            "machineNamePrefix": "[variables('machineSettings').machineNamePrefix]",
+                            "osImageName": "[variables('machineSettings').osImageName]",
+                            "vmSize": "[variables('clusterSpec').vmSizeMember]",
+                            "dataDiskSize": "[variables('clusterSpec').dataDiskSize]",
+                            "machineIndex": "[copyindex()]",
+                            "vmScripts": "[variables('vmScripts').scriptsToDownload]",
+                            "commandToExecute": "[variables('vmScripts').installCommand]"
+                        }
                     }
                 }
             }
