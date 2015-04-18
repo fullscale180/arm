@@ -58,7 +58,7 @@
         },
         "jumpbox": {
             "type": "string",
-            "defaultValue": "Enabled",
+            "defaultValue": "Disabled",
             "allowedValues": [
                 "Enabled",
                 "Disabled"
@@ -109,11 +109,12 @@
         "replicaSetKey": {
             "type": "string",
             "metadata": {
-                "Description": "The shared key for the MongoDB replica set"
+                "Description": "The shared secret key for the MongoDB replica set"
             }
         }
     },
     "variables": {
+        "_comment0": "/* T-shirt sizes may vary for different reasons, and some customers may want to modify these - so feel free to go ahead and define your favorite t-shirts */",
         "tshirtSizeXSmall": {
             "vmSizeMember": "Standard_D1",
             "vmSizeArbiter": "Standard_A1",
@@ -147,25 +148,25 @@
             "numberOfMembers": 8,
             "arbiter": "Enabled",
             "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D2.json')]",
-            "storageAccountCount": 5,
+            "storageAccountCount": 4,
             "dataDiskSize": 250
         },
         "tshirtSizeXLarge": {
             "vmSizeMember": "Standard_D3",
             "vmSizeArbiter": "Standard_A1",
-            "numberOfMembers": 16,
+            "numberOfMembers": 8,
             "arbiter": "Enabled",
             "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D3.json')]",
-            "storageAccountCount": 5,
+            "storageAccountCount": 4,
             "dataDiskSize": 500
         },
         "tshirtSizeXXLarge": {
             "vmSizeMember": "Standard_D3",
             "vmSizeArbiter": "Standard_A1",
-            "numberOfMembers": 51,
+            "numberOfMembers": 16,
             "arbiter": "Disabled",
             "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D3.json')]",
-            "storageAccountCount": 5,
+            "storageAccountCount": 8,
             "dataDiskSize": 500
         },
         "osFamilyUbuntu": {
@@ -179,6 +180,7 @@
             "installerPackages": "mongo-10gen mongo-10gen-server"
         },
         "vmStorageAccountContainerName": "vhd-mongodb",
+        "vmStorageAccountDomain": "blob.core.windows.net",
         "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_2_LTS-amd64-server-20150309-en-us-30GB",
         "sourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
@@ -198,7 +200,7 @@
         "storageSettings": {
             "vhdStorageAccountName": "[parameters('storageAccountName')]",
             "vhdContainerName": "[variables('vmStorageAccountContainerName')]",
-            "destinationVhdsContainer": "[concat('https://', parameters('storageAccountName'),'.blob.core.windows.net/', variables('vmStorageAccountContainerName'), '/')]",
+            "destinationVhdsContainer": "[concat('https://', parameters('storageAccountName'), variables('vmStorageAccountDomain'), '/', variables('vmStorageAccountContainerName'), '/')]",
             "storageAccountCount": "[variables('clusterSpec').storageAccountCount]"
         },
         "networkSettings": {
@@ -225,7 +227,50 @@
             ],
             "installCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-install.sh', ' -url ', variables('osFamilySpec').installerBaseUrl, ' -package ', variables('osFamilySpec').installerPackages)]",
             "setupCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-setup.sh', ' -ip ', concat(variables('networkSettings').machineIpPrefix, ' -user ', parameters('adminUsername'), ' -pwd ', parameters('adminPassword'), ' -rsname ', parameters('replicaSetName'), ' -rskey ', parameters('replicaSetKey')))]"
-        }
+        },
+        "_comment1": "/* The weird list of values below helps partition VM disks across multiple storage accounts to achieve a better throughput */",
+        "_comment2": "/* Feel free to modify the default allocations if you are comfortable and understand what you are doing */",
+        "storageAccountForXSmall_0": "0",
+        "storageAccountForXSmall_1": "0",
+        "storageAccountForSmall_0": "0",
+        "storageAccountForSmall_1": "0",
+        "storageAccountForSmall_2": "0",
+        "storageAccountForMedium_0": "0",
+        "storageAccountForMedium_1": "0",
+        "storageAccountForMedium_2": "0",
+        "storageAccountForMedium_3": "0",
+        "storageAccountForLarge_0": "0",
+        "storageAccountForLarge_1": "1",
+        "storageAccountForLarge_2": "2",
+        "storageAccountForLarge_3": "3",
+        "storageAccountForLarge_4": "0",
+        "storageAccountForLarge_5": "1",
+        "storageAccountForLarge_6": "2",
+        "storageAccountForLarge_7": "3",
+        "storageAccountForXLarge_0": "0",
+        "storageAccountForXLarge_1": "1",
+        "storageAccountForXLarge_2": "2",
+        "storageAccountForXLarge_3": "3",
+        "storageAccountForXLarge_4": "0",
+        "storageAccountForXLarge_5": "1",
+        "storageAccountForXLarge_6": "2",
+        "storageAccountForXLarge_7": "3",
+        "storageAccountForXXLarge_0": "0",
+        "storageAccountForXXLarge_1": "1",
+        "storageAccountForXXLarge_2": "2",
+        "storageAccountForXXLarge_3": "3",
+        "storageAccountForXXLarge_4": "4",
+        "storageAccountForXXLarge_5": "5",
+        "storageAccountForXXLarge_6": "6",
+        "storageAccountForXXLarge_7": "7",
+        "storageAccountForXXLarge_8": "0",
+        "storageAccountForXXLarge_9": "1",
+        "storageAccountForXXLarge_10": "2",
+        "storageAccountForXXLarge_11": "3",
+        "storageAccountForXXLarge_12": "4",
+        "storageAccountForXXLarge_13": "5",
+        "storageAccountForXXLarge_14": "6",
+        "storageAccountForXXLarge_15": "7"
     },
     "resources": [
         {
@@ -303,10 +348,9 @@
                     },
                     "storageSettings": {
                         "value": {
-                            "vhdStorageAccountName": "[variables('storageSettings').vhdStorageAccountName]",
+                            "vhdStorageAccountName": "[concat(variables('storageSettings').vhdStorageAccountName, variables(concat('storageAccountFor', parameters('tshirtSize'), '_', copyindex())))]",
                             "vhdContainerName": "[variables('storageSettings').vhdContainerName]",
-                            "destinationVhdsContainer": "[variables('storageSettings').destinationVhdsContainer]",
-                            "storageAccountCount": "[variables('storageSettings').storageAccountCount]"
+                            "destinationVhdsContainer": "[concat('https://', variables('storageSettings').vhdStorageAccountName, variables(concat('storageAccountFor', parameters('tshirtSize'), '_', copyindex())), variables('vmStorageAccountDomain'), '/', variables('storageSettings').vhdContainerName, '/')]"
                         }
                     },
                     "networkSettings": {
