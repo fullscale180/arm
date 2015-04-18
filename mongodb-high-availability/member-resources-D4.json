@@ -106,6 +106,102 @@
                             "vhd": {
                                 "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk3.vhd')]"
                             }
+                        },
+                        {
+                            "name": "dataDisk4",
+                            "diskSizeGB": "[parameters('machineSettings').dataDiskSize]",
+                            "lun": 4,
+                            "vhd": {
+                                "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk4.vhd')]"
+                            }
+                        },
+                        {
+                            "name": "dataDisk5",
+                            "diskSizeGB": "[parameters('machineSettings').dataDiskSize]",
+                            "lun": 5,
+                            "vhd": {
+                                "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk5.vhd')]"
+                            }
+                        },
+                        {
+                            "name": "dataDisk6",
+                            "diskSizeGB": "[parameters('machineSettings').dataDiskSize]",
+                            "lun": 6,
+                            "vhd": {
+                                "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk6.vhd')]"
+                            }
+                        },
+                        {
+                            "name": "dataDisk7",
+                            "diskSizeGB": "[parameters('machineSettings').dataDiskSize]",
+                            "lun": 7,
+                            "vhd": {
+                                "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk7.vhd')]"
+                            }
+                        },
+                        {
+                            "name": "dataDisk8",
+                            "diskSizeGB": "[parameters('machineSettings').dataDiskSize]",
+                            "lun": 8,
+                            "vhd": {
+                                "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk8.vhd')]"
+                            }
+                        },
+                        {
+                            "name": "dataDisk9",
+                            "diskSizeGB": "[parameters('machineSettings').dataDiskSize]",
+                            "lun": 9,
+                            "vhd": {
+                                "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk9.vhd')]"
+                            }
+                        },
+                        {
+                            "name": "dataDisk10",
+                            "diskSizeGB": "[parameters('machineSettings').dataDiskSize]",
+                            "lun": 10,
+                            "vhd": {
+                                "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk10.vhd')]"
+                            }
+                        },
+                        {
+                            "name": "dataDisk11",
+                            "diskSizeGB": "[parameters('machineSettings').dataDiskSize]",
+                            "lun": 11,
+                            "vhd": {
+                                "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk11.vhd')]"
+                            }
+                        },
+                        {
+                            "name": "dataDisk12",
+                            "diskSizeGB": "[parameters('machineSettings').dataDiskSize]",
+                            "lun": 12,
+                            "vhd": {
+                                "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk12.vhd')]"
+                            }
+                        },
+                        {
+                            "name": "dataDisk13",
+                            "diskSizeGB": "[parameters('machineSettings').dataDiskSize]",
+                            "lun": 13,
+                            "vhd": {
+                                "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk13.vhd')]"
+                            }
+                        },
+                        {
+                            "name": "dataDisk14",
+                            "diskSizeGB": "[parameters('machineSettings').dataDiskSize]",
+                            "lun": 14,
+                            "vhd": {
+                                "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk14.vhd')]"
+                            }
+                        },
+                        {
+                            "name": "dataDisk15",
+                            "diskSizeGB": "[parameters('machineSettings').dataDiskSize]",
+                            "lun": 15,
+                            "vhd": {
+                                "Uri": "[concat(parameters('storageSettings').destinationVhdsContainer, 'vm', parameters('machineSettings').machineIndex, 'dataDisk15.vhd')]"
+                            }
                         }
                     ],
                     "destinationVhdsContainer": "[parameters('storageSettings').destinationVhdsContainer]"

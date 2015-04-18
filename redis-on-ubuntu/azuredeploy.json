@@ -291,12 +291,16 @@
             }
         },
         {
-            "name": "install-script-extension",
+            "name": "[concat('install-script-extension-', copyindex())]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
             "dependsOn": [
                 "virtualMachineLoop"
             ],
+            "copy": {
+                "name": "installScriptExtensionLoop",
+                "count": "[variables('numberOfInstances')]"
+            },
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
@@ -307,8 +311,8 @@
                     "region": {
                         "value": "[parameters('region')]"
                     },
-                    "numberOfInstances": {
-                        "value": "[variables('numberOfInstances')]"
+                    "machineIndex": {
+                        "value": "[copyindex()]"
                     },
                     "scriptUrl": {
                         "value": "[concat(variables('scriptUrl'), 'redis-cluster-install.sh')]"
@@ -324,7 +328,7 @@
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
             "dependsOn": [
-                "[concat('Microsoft.Resources/deployments/', 'install-script-extension')]"
+                "installScriptExtensionLoop"
             ],
             "properties": {
                 "mode": "Incremental",

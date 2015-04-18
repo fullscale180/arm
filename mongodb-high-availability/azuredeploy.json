@@ -120,7 +120,8 @@
             "numberOfMembers": 2,
             "arbiter": "Enabled",
             "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D1.json')]",
-            "storageAccountCount": 1
+            "storageAccountCount": 1,
+            "dataDiskSize": 100
         },
         "tshirtSizeSmall": {
             "vmSizeMember": "Standard_D1",
@@ -138,7 +139,7 @@
             "arbiter": "Enabled",
             "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D2.json')]",
             "storageAccountCount": 1,
-            "dataDiskSize": 100
+            "dataDiskSize": 250
         },
         "tshirtSizeLarge": {
             "vmSizeMember": "Standard_D2",
@@ -147,7 +148,7 @@
             "arbiter": "Enabled",
             "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D2.json')]",
             "storageAccountCount": 5,
-            "dataDiskSize": 100
+            "dataDiskSize": 250
         },
         "tshirtSizeXLarge": {
             "vmSizeMember": "Standard_D3",
@@ -156,7 +157,7 @@
             "arbiter": "Enabled",
             "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D3.json')]",
             "storageAccountCount": 5,
-            "dataDiskSize": 100
+            "dataDiskSize": 500
         },
         "tshirtSizeXXLarge": {
             "vmSizeMember": "Standard_D3",
@@ -165,7 +166,7 @@
             "arbiter": "Disabled",
             "vmTemplate": "[concat(variables('templateBaseUrl'), 'member-resources-D3.json')]",
             "storageAccountCount": 5,
-            "dataDiskSize": 100
+            "dataDiskSize": 500
         },
         "osFamilyUbuntu": {
             "osName": "ubuntu",

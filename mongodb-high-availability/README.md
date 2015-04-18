@@ -37,14 +37,14 @@ Since MongoDB replication operates in the single-master mode, only one primary n
 
 The following table outlines the deployment topology characteristics for each supported t-shirt size:
 
-| T-Shirt Size | Member VM Size | CPU Cores | Memory | Data Disks | Arbiter VM Size | # of Members | Arbiter |
+| T-Shirt Size | Member Node VM Size | CPU Cores | Memory | Data Disks | Arbiter Node VM Size | # of Members | Arbiter |
 |:--- |:---|:---|:---|:---|:---|:---|:---|
-| XSmall | Standard_D1 | 1 | 3.5 GB | 4x100 GB | Standard_A1 | 2 | Yes |
-| Small | Standard_D1 | 1 | 3.5 GB | 4x100 GB | Standard_A1 | 3 | No |
-| Medium | Standard_D2 | 2 | 7 GB | 8x100 GB | Standard_A1 | 5 | Yes |
-| Large | Standard_D2 | 2 | 7 GB | 8x100 GB | Standard_A1 | 9 | Yes |
-| XLarge | Standard_D3 | 4 | 14 GB | 32x100 GB | Standard_A1 | 17 | Yes |
-| XXLarge | Standard_D3 | 4 | 14 GB | 32x100 GB | Standard_A1 | 32 | No |
+| XSmall | Standard_D1 | 1 | 3.5 GB | 2x100 GB | Standard_A1 | 2 | Yes |
+| Small | Standard_D1 | 1 | 3.5 GB | 2x100 GB | Standard_A1 | 3 | No |
+| Medium | Standard_D2 | 2 | 7 GB | 4x250 GB | Standard_A1 | 5 | Yes |
+| Large | Standard_D2 | 2 | 7 GB | 4x250 GB | Standard_A1 | 9 | Yes |
+| XLarge | Standard_D3 | 4 | 14 GB | 8x500 GB | Standard_A1 | 17 | Yes |
+| XXLarge | Standard_D3 | 4 | 14 GB | 8x500 GB | Standard_A1 | 32 | No |
 
 NOTE: An optional single arbiter node is provisioned in addition to the number of members stated above, thus increasing the total number of nodes by 1.
 
