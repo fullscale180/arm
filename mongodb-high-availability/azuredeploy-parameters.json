@@ -1,6 +1,6 @@
 {
     "storageAccountName": {
-        "value": "fs180mongo1"
+        "value": "fs180mongodb"
     },
     "adminUsername": {
         "value": "MongoAdmin"
