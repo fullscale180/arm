@@ -282,7 +282,7 @@
         },
         {
             "type": "Microsoft.Resources/deployments",
-            "name": "[concat('memberNode', copyindex())]",
+            "name": "[concat('member-resources', copyindex())]",
             "apiVersion": "2015-01-01",
             "dependsOn": [
                 "[concat('Microsoft.Resources/deployments/', 'shared-resources')]"
@@ -333,7 +333,7 @@
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
             "dependsOn": [
-                "[concat('Microsoft.Resources/deployments/', 'shared-resources')]"
+                "memberNodesLoop"
             ],
             "properties": {
                 "mode": "Incremental",
