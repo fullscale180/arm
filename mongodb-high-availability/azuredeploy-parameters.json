@@ -1,6 +1,6 @@
 {
     "storageAccountName": {
-        "value": "fs180mongodb"
+        "value": "fs180mongodbb"
     },
     "adminUsername": {
         "value": "MongoAdmin"
@@ -30,7 +30,7 @@
         "value": "Enabled"
     },
     "tshirtSize": {
-        "value": "Small"
+        "value": "XSmall"
     },
     "osFamily": {
         "value": "Ubuntu"
