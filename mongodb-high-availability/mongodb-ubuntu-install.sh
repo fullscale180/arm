@@ -8,7 +8,7 @@
 #--------------------------------------------------------------------------------------------------
 help()
 {
-	echo "This script installs MongoDB on the Ubuntu virtual machine image."
+	echo "This script installs MongoDB on the Ubuntu virtual machine image"
 	echo "Options:"
 	echo "		-l Installation package URL"
 	echo "		-i Installation package name"
@@ -51,9 +51,13 @@ ADMIN_USER_PASSWORD=""
 
 # Parse script parameters
 while getopts :l:i:r:k:u:p:ah optname; do
-  log "Option $optname set with value ${OPTARG}"
+
+	# Log input parameters (except the admin password) to facilitate troubleshooting
+	if [ ! "$optname" == "p" ]; then
+		log "Option $optname set with value ${OPTARG}"
+	fi
   
-  case $optname in
+	case $optname in
 	l) # Installation package location
 		PACKAGE_URL=${OPTARG}
 		;;
@@ -89,7 +93,7 @@ while getopts :l:i:r:k:u:p:ah optname; do
 done
 
 # Validate parameters
-if [ "$ADMIN_USER_NAME" -eq "" ] -o [ "$ADMIN_USER_PASSWORD" -eq "" ];
+if [ "$ADMIN_USER_NAME" == "" ] || [ "$ADMIN_USER_PASSWORD" == "" ];
 then
     log "Script executed without admin credentials"
     echo "You must provide a name and password for the system administrator." >&2
@@ -123,7 +127,7 @@ install_mongodb()
 
 	# Configure mongodb.list file with the correct location
 	apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
-	echo "deb ${PACKAGE_URL} "$(lsb_release -sc)"/mongodb-org/3.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.0.list
+	echo "deb ${PACKAGE_URL} "$(lsb_release -sc)"/mongodb-org/3.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-3.0.list
 
 	# Install updates
 	apt-get -y update
@@ -136,6 +140,9 @@ install_mongodb()
 	#Install Mongo DB
 	log "Installing MongoDB package $PACKAGE_NAME..."
 	apt-get -y install $PACKAGE_NAME
+	
+	# Stop Mongod as it may be auto-started during the above step (which is not desirable)
+	service mongod stop
 }
 
 #############################################################################
@@ -150,11 +157,24 @@ configure_datadisks()
 #############################################################################
 configure_replicaset()
 {
-	log "Configuring a replica set $REPLICA_SET_NAME"
+	log "Configuring a replica set $REPLICA_SET_NAME..."
 	
 	echo "$REPLICA_SET_KEY_DATA" | tee "$REPLICA_SET_KEY_FILE" > /dev/null
 	chown -R mongodb:mongodb "$REPLICA_SET_KEY_FILE"
 	chmod 600 "$REPLICA_SET_KEY_FILE"
+	
+	# Enable replica set in the configuration file
+	sed -i "s|#keyFile: \"\"$|keyFile: \"${REPLICA_SET_KEY_FILE}\"|g" /etc/mongod.conf
+	sed -i "s|#authorization:|authorization:|g" /etc/mongod.conf
+	
+	# Restart mongod so that configuration changes take effect
+	service mongod restart
+	
+	# Initiate a replica set
+	mongo master -u $ADMIN_USER_NAME -p $ADMIN_USER_PASSWORD --host 127.0.0.1 --eval "printjson(rs.initiate())"
+	
+	# Print the current replica set configuration
+	mongo master -u $ADMIN_USER_NAME -p $ADMIN_USER_PASSWORD --host 127.0.0.1 --eval "printjson(rs.conf())"	
 }
 
 #############################################################################
@@ -185,8 +205,8 @@ processManagement:
 net:
     port: $MONGODB_PORT
 security:
-    keyFile: "$REPLICA_SET_KEY_FILE"
-    authorization: "disabled"
+    #keyFile: ""
+    #authorization: "enabled"
 storage:
     dbPath: "$MONGODB_DATA/db"
     directoryPerDB: true
@@ -202,13 +222,14 @@ start_mongodb()
 	log "Starting MongoDB daemon processes..."
 	service mongod start
 	
-	# Sleep for 30 seconds to allow MongoDB daemon to initialize for the first time
-	sleep 30s	
+	# Wait for MongoDB daemon to start and initialize for the first time (this may take up to a minute or so)
+	while ! timeout 1 bash -c "echo > /dev/tcp/localhost/$MONGODB_PORT"; do sleep 10; done
 }
 
-configure_db_permissions()
+configure_db_users()
 {
 	# Create a system administrator
+	log "Creating a system administrator..."
 	mongo master --host 127.0.0.1 --eval "db.createUser({user: '${ADMIN_USER_NAME}', pwd: '${ADMIN_USER_PASSWORD}', roles:[{ role: 'userAdminAnyDatabase', db: 'admin' } ]})"
 }
 
@@ -225,13 +246,13 @@ install_mongodb
 configure_mongodb
 
 # Step 5
-configure_replicaset
-
-# Step 6
 start_mongodb
 
+# Step 6
+configure_db_users
+
 # Step 7
-configure_db_permissions
+configure_replicaset
 
 # Exit proudly
 exit 0
