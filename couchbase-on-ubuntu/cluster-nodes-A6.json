@@ -56,6 +56,13 @@
         "Description": "Number of cluster nodes per storage account. One storage account cannot support more than 40 disks."
       }
     },
+    "vmNamePrefix": {
+      "type": "string",
+      "defaultValue": "cbnode",
+      "metadata": {
+        "Description": "Prefx for VM names on the cluster"
+      }
+    },
     "nodesIpPrefix": {
       "type": "string",
       "metadata": {
@@ -65,7 +72,7 @@
     "vmSize": {
       "type": "string",
       "metadata": {
-        "Description": "Size of the VM"
+        "Description": "Size of the VM."
       }
     },
     "vmScripts": {
@@ -106,7 +113,7 @@
   }, {
     "apiVersion": "2014-12-01-preview",
     "type": "Microsoft.Compute/virtualMachines",
-    "name": "[concat('vm', parameters('nodeId'))]",
+    "name": "[concat(parameters('vmNamePrefix'), parameters('nodeId'))]",
     "location": "[parameters('targetRegion')]",
     "dependsOn": [
       "[concat('Microsoft.Network/networkInterfaces/', 'nic', parameters('nodeId'))]"
@@ -119,7 +126,7 @@
         "vmSize": "[parameters('vmSize')]"
       },
       "osProfile": {
-        "computername": "[concat('vm', parameters('nodeId'))]",
+        "computername": "[concat(parameters('vmNamePrefix'), parameters('nodeId'))]",
         "adminUsername": "[parameters('adminUsername')]",
         "adminPassword": "[parameters('adminPassword')]"
       },
@@ -128,63 +135,62 @@
           "id": "[parameters('sourceImage')]"
         },
         "dataDisks": [{
-            "name": "datadisk0",
-            "diskSizeGB": "[variables('dataDiskSize')]",
-            "lun": 0,
-            "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId'),'dataDisk0' ,'.vhd')]"
-            }
-          }, {
-            "name": "datadisk1",
-            "diskSizeGB": "[variables('dataDiskSize')]",
-            "lun": 1,
-            "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId') ,'dataDisk1','.vhd')]"
-            }
-          }, {
-            "name": "datadisk2",
-            "diskSizeGB": "[variables('dataDiskSize')]",
-            "lun": 2,
-            "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId') ,'dataDisk2','.vhd')]"
-            }
-          }, {
-            "name": "datadisk3",
-            "diskSizeGB": "[variables('dataDiskSize')]",
-            "lun": 3,
-            "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId') ,'dataDisk3','.vhd')]"
-            }
-          }, {
-            "name": "datadisk4",
-            "diskSizeGB": "[variables('dataDiskSize')]",
-            "lun": 4,
-            "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId'),'dataDisk4' ,'.vhd')]"
-            }
-          }, {
-            "name": "datadisk5",
-            "diskSizeGB": "[variables('dataDiskSize')]",
-            "lun": 5,
-            "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId') ,'dataDisk5','.vhd')]"
-            }
-          }, {
-            "name": "datadisk6",
-            "diskSizeGB": "[variables('dataDiskSize')]",
-            "lun": 6,
-            "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId') ,'dataDisk6','.vhd')]"
-            }
-          }, {
-            "name": "datadisk7",
-            "diskSizeGB": "[variables('dataDiskSize')]",
-            "lun": 7,
-            "vhd": {
-              "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', 'vm', parameters('nodeId') ,'dataDisk7','.vhd')]"
-            }
+          "name": "datadisk0",
+          "diskSizeGB": "[variables('dataDiskSize')]",
+          "lun": 0,
+          "vhd": {
+            "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', parameters('vmNamePrefix'), parameters('nodeId'),'dataDisk0' ,'.vhd')]"
           }
-        ],
+        }, {
+          "name": "datadisk1",
+          "diskSizeGB": "[variables('dataDiskSize')]",
+          "lun": 1,
+          "vhd": {
+            "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', parameters('vmNamePrefix'), parameters('nodeId') ,'dataDisk1','.vhd')]"
+          }
+        }, {
+          "name": "datadisk2",
+          "diskSizeGB": "[variables('dataDiskSize')]",
+          "lun": 2,
+          "vhd": {
+            "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', parameters('vmNamePrefix'), parameters('nodeId') ,'dataDisk2','.vhd')]"
+          }
+        }, {
+          "name": "datadisk3",
+          "diskSizeGB": "[variables('dataDiskSize')]",
+          "lun": 3,
+          "vhd": {
+            "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', parameters('vmNamePrefix'), parameters('nodeId') ,'dataDisk3','.vhd')]"
+          }
+        }, {
+          "name": "datadisk4",
+          "diskSizeGB": "[variables('dataDiskSize')]",
+          "lun": 4,
+          "vhd": {
+            "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', parameters('vmNamePrefix'), parameters('nodeId'),'dataDisk4' ,'.vhd')]"
+          }
+        }, {
+          "name": "datadisk5",
+          "diskSizeGB": "[variables('dataDiskSize')]",
+          "lun": 5,
+          "vhd": {
+            "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', parameters('vmNamePrefix'), parameters('nodeId') ,'dataDisk5','.vhd')]"
+          }
+        }, {
+          "name": "datadisk6",
+          "diskSizeGB": "[variables('dataDiskSize')]",
+          "lun": 6,
+          "vhd": {
+            "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', parameters('vmNamePrefix'), parameters('nodeId') ,'dataDisk6','.vhd')]"
+          }
+        }, {
+          "name": "datadisk7",
+          "diskSizeGB": "[variables('dataDiskSize')]",
+          "lun": 7,
+          "vhd": {
+            "Uri": "[concat('http://', parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/', parameters('vmNamePrefix'), parameters('nodeId') ,'dataDisk7','.vhd')]"
+          }
+        }],
         "destinationVhdsContainer": "[concat('http://',parameters('storageAccountName'), '.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/')]"
       },
       "networkProfile": {
@@ -195,11 +201,11 @@
     }
   }, {
     "type": "Microsoft.Compute/virtualMachines/extensions",
-    "name": "[concat('vm', parameters('nodeId'), '/installcouchbase')]",
+    "name": "[concat(parameters('vmNamePrefix'), parameters('nodeId'), '/installcouchbase')]",
     "apiVersion": "2014-12-01-preview",
     "location": "[parameters('targetRegion')]",
     "dependsOn": [
-      "[concat('Microsoft.Compute/virtualMachines/', 'vm', parameters('nodeId'))]"
+      "[concat('Microsoft.Compute/virtualMachines/', parameters('vmNamePrefix'), parameters('nodeId'))]"
     ],
     "properties": {
       "publisher": "Microsoft.OSTCExtensions",

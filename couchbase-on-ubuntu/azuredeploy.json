@@ -89,14 +89,11 @@
     },
     "variables": {
         "cbClusterAvailabilitySetName": "cbClusterAvailabilitySet",
-        "vmStorageAccountContainerName": "vhd",
         "vmSourceImageName": "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-12_04_5_LTS-amd64-server-20150413-en-us-30GB",
-        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
         "sourceImage": "[concat('/',subscription().subscriptionId,'/services/images/',variables('vmSourceImageName'))]",
         "gituser": "fullscale180",
         "gitrepo": "arm",
-        "gitrepodir": "couchbase-on-ubuntu",
-        "dataDiskSize": "1023",
+        "gitrepodir": "couchbase-on-ubuntu",        
         "networkSettings": {
             "virtualNetworkName": "[parameters('virtualNetworkName')]",
             "addressPrefix": "10.0.0.0/16",
@@ -109,7 +106,7 @@
             }
         },
         "nodesIpPrefix": "10.0.0.1",
-
+        "baseUrl": "[concat('https://raw.githubusercontent.com/', variables('gituser'), '/', variables('gitrepo'), '/master/', variables('gitrepodir'), '/')]",        
         "storageAccountSuffixForNodeS0": "0",
         "storageAccountSuffixForNodeS1": "0",
         "storageAccountSuffixForNodeS2": "0",
@@ -121,9 +118,7 @@
         "storageAccountSuffixForNodeL1": "1",
         "storageAccountSuffixForNodeL2": "2",
         "storageAccountSuffixForNodeL3": "3",
-        "storageAccountSuffixForNodeL4": "4",
-        "jumpboxTemplateName": "jumpbox-resources-",
-        "baseUrl": "[concat('https://raw.githubusercontent.com/', variables('gituser'), '/', variables('gitrepo'), '/master/', variables('gitrepodir'), '/')]",
+        "storageAccountSuffixForNodeL4": "4",        
         "clusterTshirtSizeS": {
             "storageAccountCount": 1,
             "clusterSizeMinusOne": 2,
@@ -181,12 +176,10 @@
                 "id": "[concat(resourceId('Microsoft.Network/networkInterfaces',  'nic4'),'/ipConfigurations/ipconfig1')]"
             }]
         },
-        "internalIp": "10.0.0.100",
-        "cbPackageDownloadLink": "[concat(parameters('cbPackageDownloadBase'), parameters('cbPackage'))]",
         "vmScripts": {
             "scriptsToDownload": [
                 "[concat(variables('baseUrl'), 'couchbase-azure-install.sh')]",
-                "[variables('cbPackageDownloadLink')]",
+                "[concat(parameters('cbPackageDownloadBase'), parameters('cbPackage'))]",
                 "[concat(variables('baseUrl'), 'vm-disk-utils-0.1.sh')]"
             ],
             "couchbaseInstallCommand": "[concat('bash couchbase-azure-install.sh -d ', parameters('cbPackage'), ' -n ', parameters('cbClusterName'), ' -i ', concat(variables('nodesIpPrefix'), '-', variables('clusterSpec').clusterSize), ' -a ', parameters('adminUsername'), ' -p ', parameters('adminPassword'), ' -r ', variables('clusterSpec').couchbaseRamQuota)]",
@@ -277,6 +270,9 @@
                 "nodeId": {
                     "value": "[copyindex()]"
                 },
+                "vmNamePrefix": {
+                    "value": "[parameters('vmNamePrefix')]"
+                },
                 "nodesIpPrefix": {
                     "value": "[variables('nodesIpPrefix')]"
                 },
@@ -332,6 +328,9 @@
                 "nodeId": {
                     "value": "[variables('clusterSpec').lastNodeId]"
                 },
+                "vmNamePrefix": {
+                    "value": "[parameters('vmNamePrefix')]"
+                },
                 "nodesIpPrefix": {
                     "value": "[variables('nodesIpPrefix')]"
                 },
@@ -355,7 +354,7 @@
         "properties": {
             "mode": "Incremental",
             "templateLink": {
-                "uri": "[concat(variables('baseUrl'), variables('jumpboxTemplateName'), parameters('jumpbox'), '.json')]",
+                "uri": "[concat(variables('baseUrl'), 'jumpbox-resources-', parameters('jumpbox'), '.json')]",
                 "contentVersion": "1.0.0.0"
             },
             "parameters": {
@@ -377,7 +376,7 @@
                 "adminPassword": {
                     "value": "[parameters('adminPassword')]"
                 },
-                "computerNamePrefix": {
+                "vmNamePrefix": {
                     "value": "[parameters('vmNamePrefix')]"
                 }
             }

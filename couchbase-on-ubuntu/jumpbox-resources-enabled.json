@@ -42,10 +42,10 @@
                 "Description": "Administrator password used when provisioning virtual machines"
             }
         },
-        "computerNamePrefix": {
+        "vmNamePrefix": {
             "type": "string",
             "metadata": {
-                "Description": "The global VM name prefix"
+                "Description": "The global VM name prefix."
             }
         }
     },
@@ -56,7 +56,6 @@
         "winSourceImageName": "[concat('/',subscription().subscriptionId,'/services/images/a699494373c04fc0bc8f2bb1389d6106__Windows-Server-Technical-Preview-201504.01-en.us-127GB.vhd')]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('subnetName'))]",
-        "vmSize": "Standard_A0",
         "storageAccountName": "[concat(parameters('storageAccountNamePrefix'), 'jb')]"
     },
     "resources": [{
@@ -108,11 +107,11 @@
         ],
         "properties": {
             "hardwareProfile": {
-                "vmSize": "[variables('vmSize')]",
+                "vmSize": "Standard_A0",
                 "platformGuestAgent": "true"
             },
             "osProfile": {
-                "computername": "[concat(parameters('computerNamePrefix'), 'jumpbox')]",
+                "computername": "[concat(parameters('vmNamePrefix'), 'jumpbox')]",
                 "adminUsername": "[parameters('adminUsername')]",
                 "adminPassword": "[parameters('adminPassword')]",
                 "linuxOperatingSystemProfile": {
@@ -184,7 +183,7 @@
                 "platformGuestAgent": "true"
             },
             "osProfile": {
-                "computername": "[concat(parameters('computerNamePrefix'), 'win')]",
+                "computername": "[concat(parameters('vmNamePrefix'), 'win')]",
                 "adminUsername": "[parameters('adminUsername')]",
                 "adminPassword": "[parameters('adminPassword')]",
                 "linuxOperatingSystemProfile": {

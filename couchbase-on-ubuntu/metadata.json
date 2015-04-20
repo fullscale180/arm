@@ -3,5 +3,5 @@
   "Description": "This template creates and Couchbase cluster using the specified location and name",
   "ShortDescription": "This template creates an Couchbase cluster",
   "GithubUsername": "ercenk",
-  "DateUpdated": "2015-04-06"
+  "DateUpdated": "2015-04-20"
 }
