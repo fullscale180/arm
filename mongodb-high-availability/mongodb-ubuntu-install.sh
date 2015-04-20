@@ -129,7 +129,9 @@ install_mongodb()
 	apt-get -y update
 
 	# Remove any previously created configuration file to avoid a prompt
-	rm /etc/mongod.conf
+	if [ -f /etc/mongod.conf ]; then
+		rm /etc/mongod.conf
+	fi
 	
 	#Install Mongo DB
 	log "Installing MongoDB package $PACKAGE_NAME..."
@@ -199,6 +201,9 @@ start_mongodb()
 {
 	log "Starting MongoDB daemon processes..."
 	service mongod start
+	
+	# Sleep for 30 seconds to allow MongoDB daemon to initialize for the first time
+	sleep 30s	
 }
 
 configure_db_permissions()
