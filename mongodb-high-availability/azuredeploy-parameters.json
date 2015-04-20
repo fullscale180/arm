@@ -1,6 +1,6 @@
 {
     "storageAccountName": {
-        "value": "armdeploy6"
+        "value": "fs180mongodbd"
     },
     "adminUsername": {
         "value": "MongoAdmin"
@@ -29,7 +29,16 @@
     "jumpbox": {
         "value": "Enabled"
     },
-    "tshirtSize":  {
+    "tshirtSize": {
         "value": "XSmall"
+    },
+    "osFamily": {
+        "value": "Ubuntu"
+    },
+    "replicaSetName": {
+        "value": "IloveMongoDB"
+    },
+    "replicaSetKey":  {
+        "value": "J5zA3Fgxh8CrR9CcUHjNvGJ8A6xPPrxu"
     }
 }

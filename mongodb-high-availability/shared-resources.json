@@ -24,9 +24,13 @@
     "resources": [
         {
             "type": "Microsoft.Storage/storageAccounts",
-            "name": "[parameters('storageSettings').vhdStorageAccountName]",
+            "name": "[concat(parameters('storageSettings').vhdStorageAccountName, copyindex())]",
             "apiVersion": "2014-12-01-preview",
             "location": "[parameters('commonSettings').region]",
+            "copy": {
+                "name": "storageAccountsLoop",
+                "count": "[parameters('storageSettings').storageAccountCount]"
+            },
             "properties": {
                 "accountType": "Standard_LRS"
             }
