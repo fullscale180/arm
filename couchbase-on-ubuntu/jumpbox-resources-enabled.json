@@ -42,7 +42,7 @@
                 "Description": "Administrator password used when provisioning virtual machines"
             }
         },
-        "computerNamePrefix": {
+        "vmNamePrefix": {
             "type": "string",
             "metadata": {
                 "Description": "The global VM name prefix"
@@ -111,7 +111,7 @@
                 "platformGuestAgent": "true"
             },
             "osProfile": {
-                "computername": "[concat(parameters('computerNamePrefix'), 'jumpbox')]",
+                "computername": "[concat(parameters('vmNamePrefix'), 'jumpbox')]",
                 "adminUsername": "[parameters('adminUsername')]",
                 "adminPassword": "[parameters('adminPassword')]",
                 "linuxOperatingSystemProfile": {
@@ -183,7 +183,7 @@
                 "platformGuestAgent": "true"
             },
             "osProfile": {
-                "computername": "[concat(parameters('computerNamePrefix'), 'win')]",
+                "computername": "[concat(parameters('vmNamePrefix'), 'win')]",
                 "adminUsername": "[parameters('adminUsername')]",
                 "adminPassword": "[parameters('adminPassword')]",
                 "linuxOperatingSystemProfile": {
