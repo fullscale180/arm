@@ -47,7 +47,7 @@
     "sourceImage": {
       "type": "string",
       "metadata": {
-        "Description": "Source image for the VM"
+        "Description": "Source image for the VM."
       },
     },
     "nodeId": {

@@ -45,7 +45,7 @@
         "vmNamePrefix": {
             "type": "string",
             "metadata": {
-                "Description": "The global VM name prefix"
+                "Description": "The global VM name prefix."
             }
         }
     },

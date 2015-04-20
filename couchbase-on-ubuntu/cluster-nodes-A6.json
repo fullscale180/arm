@@ -72,7 +72,7 @@
     "vmSize": {
       "type": "string",
       "metadata": {
-        "Description": "Size of the VM"
+        "Description": "Size of the VM."
       }
     },
     "vmScripts": {
