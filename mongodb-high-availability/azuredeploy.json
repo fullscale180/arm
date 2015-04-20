@@ -225,8 +225,8 @@
                 "[concat(variables('scriptUrl'), 'mongodb-', variables('osFamilySpec').osName, '-setup.sh')]",
                 "[concat(variables('scriptUrl'), 'vm-disk-utils-0.1.sh')]"
             ],
-            "installCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-install.sh', ' -l ', variables('osFamilySpec').installerBaseUrl, ' -p ', variables('osFamilySpec').installerPackages, ' -r ', parameters('replicaSetName'), ' -k ', parameters('replicaSetKey'))]",
-            "setupCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-setup.sh', ' -a ', concat(variables('networkSettings').machineIpPrefix, ' -u ', parameters('adminUsername'), ' -p ', parameters('adminPassword')))]"
+            "installCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-install.sh', ' -l ', variables('osFamilySpec').installerBaseUrl, ' -i ', variables('osFamilySpec').installerPackages, ' -r ', parameters('replicaSetName'), ' -k ', parameters('replicaSetKey'), ' -u ', parameters('adminUsername'), ' -p ', parameters('adminPassword'))]",
+            "setupCommand": "[concat('bash mongodb-', variables('osFamilySpec').osName, '-setup.sh', ' -a ', concat(variables('networkSettings').machineIpPrefix, ' -c ', variables('clusterSpec').numberOfMembers, ' -u ', parameters('adminUsername'), ' -p ', parameters('adminPassword')))]"
         },
         "_comment1": "/* The weird list of values below helps partition VM disks across multiple storage accounts to achieve a better throughput */",
         "_comment2": "/* Feel free to modify the default allocations if you are comfortable and understand what you are doing */",

@@ -11,9 +11,11 @@ help()
 	echo "This script installs MongoDB on the Ubuntu virtual machine image."
 	echo "Options:"
 	echo "		-l Installation package URL"
-	echo "		-p Installation package name"
+	echo "		-i Installation package name"
 	echo "		-r Replica set name"
 	echo "		-k Replica set key"
+	echo "		-u System administrator's user name"
+	echo "		-p System administrator's password"
 	echo "		-a (arbiter indicator)"	
 }
 
@@ -44,16 +46,18 @@ MONGODB_DATA="$DATA_MOUNTPOINT/mongodb"
 MONGODB_PORT=27017
 IS_ARBITER=false
 JOURNAL_ENABLED=true
+ADMIN_USER_NAME=""
+ADMIN_USER_PASSWORD=""
 
 # Parse script parameters
-while getopts :l:p:r:k:ah optname; do
+while getopts :l:i:r:k:u:p:ah optname; do
   log "Option $optname set with value ${OPTARG}"
   
   case $optname in
 	l) # Installation package location
 		PACKAGE_URL=${OPTARG}
 		;;
-	p) # Installation package name
+	i) # Installation package name
 		PACKAGE_NAME=${OPTARG}
 		;;		
 	r) # Replica set name
@@ -61,6 +65,12 @@ while getopts :l:p:r:k:ah optname; do
 		;;	
 	k) # Replica set key
 		REPLICA_SET_KEY_DATA=${OPTARG}
+		;;	
+	u) # Administrator's user name
+		ADMIN_USER_NAME=${OPTARG}
+		;;		
+	p) # Administrator's user name
+		ADMIN_USER_PASSWORD=${OPTARG}
 		;;	
 	a) # Arbiter indicator
 		IS_ARBITER=true
@@ -77,6 +87,14 @@ while getopts :l:p:r:k:ah optname; do
 		;;
   esac
 done
+
+# Validate parameters
+if [ "$ADMIN_USER_NAME" -eq "" ] -o [ "$ADMIN_USER_PASSWORD" -eq "" ];
+then
+    log "Script executed without admin credentials"
+    echo "You must provide a name and password for the system administrator." >&2
+    exit 3
+fi
 
 #############################################################################
 tune_memory()
@@ -166,7 +184,7 @@ net:
     port: $MONGODB_PORT
 security:
     keyFile: "$REPLICA_SET_KEY_FILE"
-    authorization: "enabled"
+    authorization: "disabled"
 storage:
     dbPath: "$MONGODB_DATA/db"
     directoryPerDB: true
@@ -181,6 +199,12 @@ start_mongodb()
 {
 	log "Starting MongoDB daemon processes..."
 	service mongod start
+}
+
+configure_db_permissions()
+{
+	# Create a system administrator
+	mongo master --host 127.0.0.1 --eval "db.createUser({user: '${ADMIN_USER_NAME}', pwd: '${ADMIN_USER_PASSWORD}', roles:[{ role: 'userAdminAnyDatabase', db: 'admin' } ]})"
 }
 
 # Step 1
@@ -200,3 +224,9 @@ configure_replicaset
 
 # Step 6
 start_mongodb
+
+# Step 7
+configure_db_permissions
+
+# Exit proudly
+exit 0

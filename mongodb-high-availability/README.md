@@ -13,7 +13,7 @@ The template expects the following parameters:
 | Name   | Description    |
 |:--- |:---|
 | storageAccountName  | Unique DNS Name for the Storage Account where the Virtual Machine's disks will be placed |
-| adminUsername  | Admin user name for the Virtual Machines  |
+| adminUsername  | Admin user name for the Virtual Machine (which also becomes a system user administrator in MongoDB)  |
 | adminPassword  | Admin password for the Virtual Machine  |
 | region | Region name where the corresponding Azure artifacts will be created |
 | virtualNetworkName | Name of Virtual Network |

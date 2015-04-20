@@ -9,3 +9,5 @@
 # Configuration steps include setting up a replica set and configuring MongoDB member nodes and an arbiter.
 # The script will be supplied with runtime parameters declared from within the corresponding ARM template.
 #----------------------------------------------------------------------------------------------------------
+
+# This script is reserved for future use
