@@ -1,6 +1,6 @@
 {
     "storageAccountName": {
-        "value": "fs180mongodbaaaaaaaa"
+        "value": "fs180mongodbbbb"
     },
     "adminUsername": {
         "value": "MongoAdmin"
@@ -36,7 +36,7 @@
         "value": "Ubuntu"
     },
     "replicaSetName": {
-        "value": "IloveMongoDB"
+        "value": "rs0"
     },
     "replicaSetKey":  {
         "value": "J5zA3Fgxh8CrR9CcUHjNvGJ8A6xPPrxu"

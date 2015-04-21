@@ -53,7 +53,7 @@ ADMIN_USER_PASSWORD=""
 while getopts :l:i:r:k:u:p:ah optname; do
 
 	# Log input parameters (except the admin password) to facilitate troubleshooting
-	if [ ! "$optname" == "p" ]; then
+	if [ ! "$optname" == "p" ] && [ ! "$optname" == "k" ]; then
 		log "Option $optname set with value ${OPTARG}"
 	fi
   
@@ -165,7 +165,9 @@ configure_replicaset()
 	
 	# Enable replica set in the configuration file
 	sed -i "s|#keyFile: \"\"$|keyFile: \"${REPLICA_SET_KEY_FILE}\"|g" /etc/mongod.conf
-	sed -i "s|#authorization:|authorization:|g" /etc/mongod.conf
+	sed -i "s|authorization: \"disabled\"$|authorization: \"enabled\"|g" /etc/mongod.conf
+	sed -i "s|#replication:|replication:|g" /etc/mongod.conf
+	sed -i "s|#replSetName:|replSetName:|g" /etc/mongod.conf
 	
 	# Restart mongod so that configuration changes take effect
 	service mongod restart
@@ -186,7 +188,8 @@ configure_mongodb()
 	mkdir "$MONGODB_DATA/log"
 	mkdir "$MONGODB_DATA/db"
 	
-	chown -R mongodb:mongodb "$MONGODB_DATA"
+	chown -R mongodb:mongodb "$MONGODB_DATA/db"
+	chown -R mongodb:mongodb "$MONGODB_DATA/log"
 	chmod 755 "$MONGODB_DATA"
 	
 	mkdir /var/run/mongodb
@@ -196,7 +199,7 @@ configure_mongodb()
 	tee /etc/mongod.conf > /dev/null <<EOF
 systemLog:
     destination: file
-    path: "/var/log/mongodb/mongod.log"
+    path: "$MONGODB_DATA/log/mongod.log"
     quiet: true
     logAppend: true
 processManagement:
@@ -206,14 +209,14 @@ net:
     port: $MONGODB_PORT
 security:
     #keyFile: ""
-    #authorization: "enabled"
+    authorization: "disabled"
 storage:
     dbPath: "$MONGODB_DATA/db"
     directoryPerDB: true
     journal:
         enabled: $JOURNAL_ENABLED
-replication:
-    replSetName: "$REPLICA_SET_NAME"
+#replication:
+    #replSetName: "$REPLICA_SET_NAME"
 EOF
 }
 
@@ -254,5 +257,5 @@ configure_db_users
 # Step 7
 configure_replicaset
 
-# Exit proudly
+# Exit (proudly)
 exit 0
