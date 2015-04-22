@@ -13,8 +13,9 @@ help()
 {
 	echo "This script configures a Redis cluster on the Ubuntu virtual machine image"
 	echo "Available parameters:"
-	echo "-c Instance_Count"
-	echo "-p Redis_Node_IP_Prefix"
+	echo "-c Instance Count"
+	echo "-s Slave Count"
+	echo "-p Redis Node IP Prefix"
 }
 
 log()
