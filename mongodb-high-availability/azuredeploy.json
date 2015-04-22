@@ -5,34 +5,39 @@
         "adminUsername": {
             "type": "string",
             "metadata": {
-                "Description": "Administrator user name used when provisioning virtual machines"
+                "Description": "Administrator user name used when provisioning virtual machines (which also becomes a system user administrator in MongoDB)"
             }
         },
         "adminPassword": {
             "type": "securestring",
             "metadata": {
-                "Description": "Administrator password used when provisioning virtual machines"
+                "Description": "Administrator password used when provisioning virtual machines (which is also a password for the system administrator in MongoDB)"
             }
         },
         "storageAccountName": {
             "type": "string",
-            "defaultValue": "uniqueStorageAccountName",
             "metadata": {
-                "Description": "Unique namespace for the Storage Account where the Virtual Machine's disks will be placed"
+                "Description": "Unique namespace for the Storage Account where the Virtual Machine's disks will be placed (this name will be used as a prefix to create one or more storage accounts as per t-shirt size)"
             }
         },
         "region": {
             "type": "string",
-            "defaultValue": "West US",
             "metadata": {
                 "Description": "Location where resources will be provisioned"
             }
         },
         "virtualNetworkName": {
             "type": "string",
-            "defaultValue": "myVNET",
+            "defaultValue": "mongodbVnet",
             "metadata": {
-                "Description": "The arbitrary name of the virtual network provisioned for the cluster"
+                "Description": "The arbitrary name of the virtual network provisioned for the MongoDB deployment"
+            }
+        },
+        "subnetName": {
+            "type": "string",
+            "defaultValue": "mongodbSubnet",
+            "metadata": {
+                "Description": "Subnet name for the virtual network that resources will be provisioned in to"
             }
         },
         "addressPrefix": {
@@ -42,18 +47,18 @@
                 "Description": "The network address space for the virtual network"
             }
         },
-        "subnetName": {
-            "type": "string",
-            "defaultValue": "Subnet-1",
-            "metadata": {
-                "Description": "Subnet name for the virtual network that resources will be provisioned in to"
-            }
-        },
         "subnetPrefix": {
             "type": "string",
             "defaultValue": "10.0.0.0/24",
             "metadata": {
-                "Description": "Address space for the virtual network subnet"
+                "Description": "The network address space for the virtual subnet"
+            }
+        },
+        "nodeAddressPrefix": {
+            "type": "string",
+            "defaultValue": "10.0.0.1",
+            "metadata": {
+                "Description": "The IP address prefix that will be used for constructing a static private IP address for each node in the cluster"
             }
         },
         "jumpbox": {
@@ -102,6 +107,7 @@
         },
         "replicaSetName": {
             "type": "string",
+            "defaultValue": "rs0",
             "metadata": {
                 "Description": "The name of the MongoDB replica set"
             }
@@ -209,7 +215,7 @@
             "subnetName": "[parameters('subnetName')]",
             "subnetPrefix": "[parameters('subnetPrefix')]",
             "subnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]",
-            "machineIpPrefix": "10.0.0.1"
+            "machineIpPrefix": "[parameters('nodeAddressPrefix')]"
         },
         "machineSettings": {
             "adminUsername": "[parameters('adminUsername')]",

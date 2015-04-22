@@ -17,6 +17,7 @@ help()
 	echo "		-u System administrator's user name"
 	echo "		-p System administrator's password"
 	echo "		-a (arbiter indicator)"	
+	echo "		-l (last member indicator)"	
 }
 
 log()
@@ -45,12 +46,13 @@ DATA_MOUNTPOINT="$DATA_DISKS/disk1"
 MONGODB_DATA="$DATA_MOUNTPOINT/mongodb"
 MONGODB_PORT=27017
 IS_ARBITER=false
+IS_LAST_MEMBER=false
 JOURNAL_ENABLED=true
 ADMIN_USER_NAME=""
 ADMIN_USER_PASSWORD=""
 
 # Parse script parameters
-while getopts :l:i:r:k:u:p:ah optname; do
+while getopts :l:i:r:k:u:p:alh optname; do
 
 	# Log input parameters (except the admin password) to facilitate troubleshooting
 	if [ ! "$optname" == "p" ] && [ ! "$optname" == "k" ]; then
@@ -79,12 +81,15 @@ while getopts :l:i:r:k:u:p:ah optname; do
 	a) # Arbiter indicator
 		IS_ARBITER=true
 		JOURNAL_ENABLED=false
-		;;			
+		;;		
+	l) # Last member indicator
+		IS_LAST_MEMBER=true
+		;;		
     h)  # Helpful hints
 		help
 		exit 2
 		;;
-    \?) #unrecognized option - show help
+    \?) # Unrecognized option - show help
 		echo -e \\n"Option -${BOLD}$OPTARG${NORM} not allowed."
 		help
 		exit 2
@@ -103,13 +108,11 @@ fi
 #############################################################################
 tune_memory()
 {
-	# Disable THP
-	# We may not reboot yet, so disable for this time first
 	# Disable THP on a running system
 	echo never > /sys/kernel/mm/transparent_hugepage/enabled
 	echo never > /sys/kernel/mm/transparent_hugepage/defrag
 
-	# Backup rc.local
+	# Disable THP upon reboot
 	cp -p /etc/rc.local /etc/rc.local.`date +%Y%m%d-%H:%M`
 	sed -i -e '$i \ if test -f /sys/kernel/mm/transparent_hugepage/enabled; then \
  			 echo never > /sys/kernel/mm/transparent_hugepage/enabled \
@@ -122,6 +125,7 @@ tune_memory()
 
 tune_system()
 {
+	# Add local machine name to the hosts file to facilitate IP address resolution
 	grep -q "${HOSTNAME}" /etc/hosts
 	if [ $? -eq $SUCCESS ]
 	then
@@ -155,7 +159,7 @@ install_mongodb()
 	apt-get -y install $PACKAGE_NAME
 	
 	# Stop Mongod as it may be auto-started during the above step (which is not desirable)
-	service mongod stop
+	mongo admin --host 127.0.0.1 --eval "db.shutdownServer({timeoutSecs : 10})"
 }
 
 #############################################################################
@@ -185,11 +189,20 @@ configure_replicaset()
 	# Restart mongod so that configuration changes take effect
 	service mongod restart
 	
-	# Initiate a replica set
-	mongo master -u $ADMIN_USER_NAME -p $ADMIN_USER_PASSWORD --host 127.0.0.1 --eval "printjson(rs.initiate())"
+	# Initiate a replica set (only run this section on the very last node)
+	if [ "$IS_LAST_NODE" = true ]; then
+		# Log a message to facilitate troubleshooting
+		log "Initiating a replica set $REPLICA_SET_NAME as this script is running on the last member node..."
 	
-	# Print the current replica set configuration
-	mongo master -u $ADMIN_USER_NAME -p $ADMIN_USER_PASSWORD --host 127.0.0.1 --eval "printjson(rs.conf())"	
+		# Initiate a replica set
+		mongo master -u $ADMIN_USER_NAME -p $ADMIN_USER_PASSWORD --host 127.0.0.1 --eval "printjson(rs.initiate())"
+		
+		# rs.add( { host: "mongodbd4.example.net:27017", priority: 0 } )
+		
+		# Print the current replica set configuration
+		mongo master -u $ADMIN_USER_NAME -p $ADMIN_USER_PASSWORD --host 127.0.0.1 --eval "printjson(rs.conf())"	
+		mongo master -u $ADMIN_USER_NAME -p $ADMIN_USER_PASSWORD --host 127.0.0.1 --eval "printjson(rs.status())"	
+	fi		
 }
 
 #############################################################################

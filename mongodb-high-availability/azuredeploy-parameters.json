@@ -1,12 +1,12 @@
 {
     "storageAccountName": {
-        "value": "fs180mongodbbbbb"
+        "value": "fs180mongodb"
     },
     "adminUsername": {
         "value": "MongoAdmin"
     },
     "adminPassword": {
-        "value": "J5zA3Fgxh8CrR9CcUHjNvGJ8A6xPPrxu"
+        "value": ""
     },
     "region": {
         "value": "West US"
@@ -39,6 +39,6 @@
         "value": "rs0"
     },
     "replicaSetKey":  {
-        "value": "J5zA3Fgxh8CrR9CcUHjNvGJ8A6xPPrxu"
+        "value": ""
     }
 }
