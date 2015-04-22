@@ -120,6 +120,19 @@ tune_memory()
 		\n' /etc/rc.local
 }
 
+tune_system()
+{
+	grep -q "${HOSTNAME}" /etc/hosts
+	if [ $? -eq $SUCCESS ]
+	then
+	  echo "${HOSTNAME}found in /etc/hosts"
+	else
+	  echo "${HOSTNAME} not found in /etc/hosts"
+	  # Append it to the hosts file if not there
+	  echo "127.0.0.1 $(hostname)" >> /etc/hosts
+	fi
+}
+
 #############################################################################
 install_mongodb()
 {
@@ -194,7 +207,7 @@ configure_mongodb()
 	
 	mkdir /var/run/mongodb
 	touch /var/run/mongodb/mongod.pid
-	chmod 777 /var/run/mongodb/mongod.pid 
+	chmod 777 /var/run/mongodb/mongod.pid
 	
 	tee /etc/mongod.conf > /dev/null <<EOF
 systemLog:
@@ -233,7 +246,7 @@ configure_db_users()
 {
 	# Create a system administrator
 	log "Creating a system administrator..."
-	mongo master --host 127.0.0.1 --eval "db.createUser({user: '${ADMIN_USER_NAME}', pwd: '${ADMIN_USER_PASSWORD}', roles:[{ role: 'userAdminAnyDatabase', db: 'admin' } ]})"
+	mongo master --host 127.0.0.1 --eval "db.createUser({user: '${ADMIN_USER_NAME}', pwd: '${ADMIN_USER_PASSWORD}', roles:[{ role: 'userAdminAnyDatabase', db: 'admin' }, { role: 'clusterAdmin', db: 'admin' }, { role: 'readWriteAnyDatabase', db: 'admin' }, { role: 'dbAdminAnyDatabase', db: 'admin' } ]})"
 }
 
 # Step 1
@@ -241,6 +254,7 @@ configure_datadisks
 
 # Step 2
 tune_memory
+tune_system
 
 # Step 3
 install_mongodb
