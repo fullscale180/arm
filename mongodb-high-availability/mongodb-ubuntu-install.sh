@@ -10,12 +10,14 @@ help()
 {
 	echo "This script installs MongoDB on the Ubuntu virtual machine image"
 	echo "Options:"
-	echo "		-l Installation package URL"
-	echo "		-i Installation package name"
+	echo "		-i Installation package URL"
+	echo "		-b Installation package name"
 	echo "		-r Replica set name"
 	echo "		-k Replica set key"
 	echo "		-u System administrator's user name"
 	echo "		-p System administrator's password"
+	echo "		-x Member node IP prefix"	
+	echo "		-n Number of member nodes"	
 	echo "		-a (arbiter indicator)"	
 	echo "		-l (last member indicator)"	
 }
@@ -50,9 +52,11 @@ IS_LAST_MEMBER=false
 JOURNAL_ENABLED=true
 ADMIN_USER_NAME=""
 ADMIN_USER_PASSWORD=""
+INSTANCE_COUNT=1
+NODE_IP_PREFIX="10.0.0.1"
 
 # Parse script parameters
-while getopts :l:i:r:k:u:p:alh optname; do
+while getopts :i:b:r:k:u:p:x:n:alh optname; do
 
 	# Log input parameters (except the admin password) to facilitate troubleshooting
 	if [ ! "$optname" == "p" ] && [ ! "$optname" == "k" ]; then
@@ -60,12 +64,12 @@ while getopts :l:i:r:k:u:p:alh optname; do
 	fi
   
 	case $optname in
-	l) # Installation package location
+	i) # Installation package location
 		PACKAGE_URL=${OPTARG}
 		;;
-	i) # Installation package name
+	b) # Installation package name
 		PACKAGE_NAME=${OPTARG}
-		;;		
+		;;
 	r) # Replica set name
 		REPLICA_SET_NAME=${OPTARG}
 		;;	
@@ -78,6 +82,12 @@ while getopts :l:i:r:k:u:p:alh optname; do
 	p) # Administrator's user name
 		ADMIN_USER_PASSWORD=${OPTARG}
 		;;	
+	x) # Private IP address prefix
+		NODE_IP_PREFIX=${OPTARG}
+		;;				
+	n) # Number of instances
+		INSTANCE_COUNT=${OPTARG}
+		;;		
 	a) # Arbiter indicator
 		IS_ARBITER=true
 		JOURNAL_ENABLED=false
@@ -126,21 +136,21 @@ tune_memory()
 tune_system()
 {
 	# Add local machine name to the hosts file to facilitate IP address resolution
-	grep -q "${HOSTNAME}" /etc/hosts
-	if [ $? -eq $SUCCESS ]
+	if grep -q "${HOSTNAME}" /etc/hosts
 	then
-	  echo "${HOSTNAME}found in /etc/hosts"
+	  echo "${HOSTNAME} was found in /etc/hosts"
 	else
-	  echo "${HOSTNAME} not found in /etc/hosts"
-	  # Append it to the hosts file if not there
+	  echo "${HOSTNAME} was not found in and will be added to /etc/hosts"
+	  # Append it to the hsots file if not there
 	  echo "127.0.0.1 $(hostname)" >> /etc/hosts
-	fi
+	  log "Hostname ${HOSTNAME} added to /etc/hosts"
+	fi	
 }
 
 #############################################################################
 install_mongodb()
 {
-	log "Downloading MongoDB package $PACKAGE_NAME from $PACKAGE_URL..."
+	log "Downloading MongoDB package $PACKAGE_NAME from $PACKAGE_URL"
 
 	# Configure mongodb.list file with the correct location
 	apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
@@ -155,18 +165,18 @@ install_mongodb()
 	fi
 	
 	#Install Mongo DB
-	log "Installing MongoDB package $PACKAGE_NAME..."
+	log "Installing MongoDB package $PACKAGE_NAME"
 	apt-get -y install $PACKAGE_NAME
 	
 	# Stop Mongod as it may be auto-started during the above step (which is not desirable)
-	mongo admin --host 127.0.0.1 --eval "db.shutdownServer({timeoutSecs : 10})"
+	stop_mongodb
 }
 
 #############################################################################
 configure_datadisks()
 {
 	# Stripe all of the data 
-	log "Formatting and configuring the data disks..."
+	log "Formatting and configuring the data disks"
 	
 	bash ./vm-disk-utils-0.1.sh -b $DATA_DISKS -s
 }
@@ -174,7 +184,7 @@ configure_datadisks()
 #############################################################################
 configure_replicaset()
 {
-	log "Configuring a replica set $REPLICA_SET_NAME..."
+	log "Configuring a replica set $REPLICA_SET_NAME"
 	
 	echo "$REPLICA_SET_KEY_DATA" | tee "$REPLICA_SET_KEY_FILE" > /dev/null
 	chown -R mongodb:mongodb "$REPLICA_SET_KEY_FILE"
@@ -186,29 +196,55 @@ configure_replicaset()
 	sed -i "s|#replication:|replication:|g" /etc/mongod.conf
 	sed -i "s|#replSetName:|replSetName:|g" /etc/mongod.conf
 	
-	# Restart mongod so that configuration changes take effect
-	service mongod restart
+	# Stop the currently running MongoDB daemon as we will need to reload its configuration
+	stop_mongodb
+	
+	# Important not to attempt to start the daemon immediately after it was stopped as unclean shutdown may be wrongly perceived
+	sleep 10s
+	
+	# Attempt to start the MongoDB daemon so that configuration changes take effect
+	start_mongodb
 	
 	# Initiate a replica set (only run this section on the very last node)
-	if [ "$IS_LAST_NODE" = true ]; then
+	if [ "$IS_LAST_MEMBER" = true ]; then
 		# Log a message to facilitate troubleshooting
-		log "Initiating a replica set $REPLICA_SET_NAME as this script is running on the last member node..."
+		log "Initiating a replica set $REPLICA_SET_NAME with $INSTANCE_COUNT members"
 	
 		# Initiate a replica set
 		mongo master -u $ADMIN_USER_NAME -p $ADMIN_USER_PASSWORD --host 127.0.0.1 --eval "printjson(rs.initiate())"
 		
-		# rs.add( { host: "mongodbd4.example.net:27017", priority: 0 } )
+		# Add all members except this node as it will be included into the replica set after the above command completes
+		for (( n=0 ; n<($INSTANCE_COUNT-1) ; n++)) 
+		do 
+			MEMBER_HOST="${NODE_IP_PREFIX}${n}:${MONGODB_PORT}"
+			
+			log "Adding member $MEMBER_HOST to replica set $REPLICA_SET_NAME" 
+			mongo master -u $ADMIN_USER_NAME -p $ADMIN_USER_PASSWORD --host 127.0.0.1 --eval "printjson(rs.add('${MEMBER_HOST}'))"
+		done
 		
 		# Print the current replica set configuration
 		mongo master -u $ADMIN_USER_NAME -p $ADMIN_USER_PASSWORD --host 127.0.0.1 --eval "printjson(rs.conf())"	
 		mongo master -u $ADMIN_USER_NAME -p $ADMIN_USER_PASSWORD --host 127.0.0.1 --eval "printjson(rs.status())"	
-	fi		
+	fi
+	
+	# Register an arbiter node with the replica set
+	if [ "$IS_ARBITER" = true ]; then
+	
+		# Work out the IP address of the last member node where we initiated a replica set
+		let "PRIMARY_MEMBER_INDEX=$INSTANCE_COUNT-1"
+		PRIMARY_MEMBER_HOST="${NODE_IP_PREFIX}${PRIMARY_MEMBER_INDEX}:${MONGODB_PORT}"
+		CURRENT_NODE_IPS=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
+		CURRENT_NODE_IP=${CURRENT_NODE_IPS[@]}
+
+		log "Adding an arbiter ${HOSTNAME} ($CURRENT_NODE_IP) node to the replica set $REPLICA_SET_NAME"
+		mongo master -u $ADMIN_USER_NAME -p $ADMIN_USER_PASSWORD --host $PRIMARY_MEMBER_HOST --eval "printjson(rs.addArb('${CURRENT_NODE_IP}'))"
+	fi
 }
 
 #############################################################################
 configure_mongodb()
 {
-	log "Configuring MongoDB..."
+	log "Configuring MongoDB"
 
 	mkdir -p "$MONGODB_DATA"
 	mkdir "$MONGODB_DATA/log"
@@ -248,17 +284,29 @@ EOF
 
 start_mongodb()
 {
-	log "Starting MongoDB daemon processes..."
+	log "Starting MongoDB daemon processes"
 	service mongod start
 	
 	# Wait for MongoDB daemon to start and initialize for the first time (this may take up to a minute or so)
 	while ! timeout 1 bash -c "echo > /dev/tcp/localhost/$MONGODB_PORT"; do sleep 10; done
 }
 
+stop_mongodb()
+{
+	# Find out what PID the MongoDB instance is running as (if any)
+	MONGOPID=`ps -ef | grep '/usr/bin/mongod' | grep -v grep | awk '{print $2}'`
+	
+	if [ ! -z "$MONGOPID" ]; then
+		log "Stopping MongoDB daemon processes (PID $MONGOPID)"
+		
+		kill -15 $MONGOPID
+	fi
+}
+
 configure_db_users()
 {
 	# Create a system administrator
-	log "Creating a system administrator..."
+	log "Creating a system administrator"
 	mongo master --host 127.0.0.1 --eval "db.createUser({user: '${ADMIN_USER_NAME}', pwd: '${ADMIN_USER_PASSWORD}', roles:[{ role: 'userAdminAnyDatabase', db: 'admin' }, { role: 'clusterAdmin', db: 'admin' }, { role: 'readWriteAnyDatabase', db: 'admin' }, { role: 'dbAdminAnyDatabase', db: 'admin' } ]})"
 }
 
